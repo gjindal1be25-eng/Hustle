@@ -20,6 +20,8 @@ import { evaluateEvents, evaluatePerEntryReaction } from './events';
 import { generateDemoState } from './demoData';
 import { Transaction, Goal, Loan, Recurring, Category } from './types';
 import { LEVEL_THRESHOLDS } from './constants';
+import { ROAD_NODES, findShortestPath } from './roadGraph';
+import { getInsightTips } from './insights';
 
 describe('Rules Engine - Pure Math & Formulas', () => {
   it('calculates balance accurately including opening balance', () => {
@@ -89,6 +91,26 @@ describe('Rules Engine - Pure Math & Formulas', () => {
     expect(getLevelTitle(1, 'freelancer')).toBe('Gig starter');
     expect(getLevelTitle(4, 'freelancer')).toBe('Agency owner');
     expect(getLevelTitle(5, 'freelancer')).toBe('Creative mogul');
+  });
+
+  it('calculates monthly savings rate and wants share accurately', () => {
+    const tx: Transaction[] = [
+      { id: '1', type: 'income', amount: 50000, date: '2026-10-01', note: '', source: 'manual' },
+      { id: '2', type: 'expense', amount: 20000, tag: 'need', date: '2026-10-05', note: '', source: 'manual' },
+      { id: '3', type: 'expense', amount: 10000, tag: 'want', date: '2026-10-15', note: '', source: 'manual' },
+    ];
+    // Income = 50k, Expense = 30k -> Savings = 20k -> Rate = 20k/50k = 0.40 (40%)
+    const rate = calculateMonthlySavingsRate(tx, '2026-10');
+    expect(rate).toBe(0.4);
+
+    // Total expense = 30k, Wants = 10k -> Wants share = 10k/30k = 0.333 (33.3%)
+    const wants = calculateWantsShare(tx, '2026-10');
+    expect(wants).toBe(0.333);
+
+    // Zero income edge case
+    expect(calculateMonthlySavingsRate([], '2026-10')).toBe(0);
+    // Zero expense edge case
+    expect(calculateWantsShare([], '2026-10')).toBe(0);
   });
 
   it('calculates EMI, total interest, and total payable matching financial formula', () => {
@@ -335,3 +357,103 @@ describe('Demo Data Specification Verification', () => {
     expect(progressPct).toBe(50);
   });
 });
+
+describe('Road Graph & Pathfinding (CR 4)', () => {
+  it('connects every building door to the central plaza', () => {
+    const doors = [
+      'work_door',
+      'townhall_door',
+      'vault_door',
+      'home_door',
+      'bank_door',
+      'market_door',
+      'school_door',
+    ];
+
+    doors.forEach((door) => {
+      expect(ROAD_NODES[door]).toBeDefined();
+      const path = findShortestPath('p_center', door);
+      expect(path.length).toBeGreaterThan(1);
+      expect(path[0]).toBe('p_center');
+      expect(path[path.length - 1]).toBe(door);
+
+      // Verify that every step in path is an actual neighbor
+      for (let i = 0; i < path.length - 1; i++) {
+        const u = ROAD_NODES[path[i]];
+        const v = path[i + 1];
+        const neighbors = Object.values(u.neighbors);
+        expect(neighbors).toContain(v);
+      }
+    });
+  });
+
+  it('handles invalid or identical nodes safely', () => {
+    expect(findShortestPath('p_center', 'p_center')).toEqual(['p_center']);
+    expect(findShortestPath('invalid_node', 'p_center')).toEqual([]);
+    expect(findShortestPath('p_center', 'invalid_node')).toEqual([]);
+  });
+});
+
+describe('Loan & Recurring Idempotency', () => {
+  it('does not double-charge loan EMI on repeated execution on same day', () => {
+    const loan: Loan = {
+      principal: 60000,
+      annualRatePct: 12,
+      months: 12,
+      startDate: '2026-08-01',
+      active: true,
+    };
+    const tx: Transaction[] = [];
+
+    // Run first time on 2026-08-15
+    const res1 = postDueLoanEMIs(loan, tx, '2026-08-15');
+    expect(res1.newTransactions.length).toBe(1);
+
+    // Run again with the posted transaction included
+    const updatedTx = [...tx, ...res1.newTransactions];
+    const res2 = postDueLoanEMIs(res1.updatedLoan, updatedTx, '2026-08-15');
+    expect(res2.newTransactions.length).toBe(0);
+  });
+
+  it('does not double-process recurring entries on repeated execution on same day', () => {
+    const rec: Recurring[] = [
+      {
+        id: 'r1',
+        type: 'income',
+        amount: 25000,
+        frequency: 'monthly',
+        startDate: '2026-09-01',
+        active: true,
+      },
+    ];
+
+    const res1 = processRecurringTransactions(rec, '2026-09-15');
+    expect(res1.newTransactions.length).toBe(1);
+
+    // Run again with updated recurring lastPostedDate
+    const res2 = processRecurringTransactions(res1.updatedRecurring, '2026-09-15');
+    expect(res2.newTransactions.length).toBe(0);
+  });
+});
+
+describe('Insight Tips Engine', () => {
+  it('generates warning tip when category exceeds monthly limit', () => {
+    const demo = generateDemoState('2026-10-14');
+    // Add heavy expense on food to blow past limit
+    demo.transactions.push({
+      id: 'tx_over',
+      type: 'expense',
+      categoryId: 'cat_food',
+      amount: 50000,
+      date: '2026-10-10',
+      note: 'Huge feast',
+      source: 'manual',
+    });
+
+    const tips = getInsightTips(demo, '2026-10-14');
+    const budgetTip = tips.find((t) => t.type === 'alert' && t.title === 'Budget Alert');
+    expect(budgetTip).toBeDefined();
+    expect(budgetTip?.message).toContain('Food');
+  });
+});
+

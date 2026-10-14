@@ -18,8 +18,6 @@ export default function StoryPage() {
     state,
     level,
     levelTitle,
-    balance,
-    netSavings,
     savedMonths,
     activeEvent,
     budgetStatuses,

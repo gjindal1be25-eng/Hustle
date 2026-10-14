@@ -68,6 +68,7 @@ export const BUILDING_DOOR_NODES: Record<string, string> = {
 
 // Shortest path along road graph using BFS
 export function findShortestPath(startNodeId: string, targetNodeId: string): string[] {
+  if (!ROAD_NODES[startNodeId] || !ROAD_NODES[targetNodeId]) return [];
   if (startNodeId === targetNodeId) return [startNodeId];
 
   const queue: string[][] = [[startNodeId]];
@@ -92,5 +93,5 @@ export function findShortestPath(startNodeId: string, targetNodeId: string): str
     }
   }
 
-  return [startNodeId];
+  return [];
 }

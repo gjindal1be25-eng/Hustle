@@ -15,7 +15,7 @@ export function processRecurringTransactions(
       continue;
     }
 
-    let currentItem = { ...item };
+    const currentItem = { ...item };
     const originalStart = new Date(item.startDate + 'T00:00:00Z');
     const startDay = originalStart.getUTCDate();
 

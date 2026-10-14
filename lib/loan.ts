@@ -18,7 +18,6 @@ export function postDueLoanEMIs(
 
   const startDate = new Date(loan.startDate + 'T00:00:00Z');
   const startDay = startDate.getUTCDate();
-  const todayDate = new Date(today + 'T00:00:00Z');
 
   // Find all existing loan EMI transactions
   const existingLoanTx = existingTransactions.filter((t) => t.source === 'loan');

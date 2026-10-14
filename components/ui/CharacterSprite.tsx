@@ -17,6 +17,7 @@ interface CharacterSpriteProps {
   size?: number;
   className?: string;
   animate?: boolean;
+  facing?: 'left' | 'right';
 }
 
 export function CharacterSprite({
@@ -26,6 +27,7 @@ export function CharacterSprite({
   size = 64,
   className = '',
   animate = true,
+  facing = 'right',
 }: CharacterSpriteProps) {
   const skin = '#F1C27D';
   const skinShadow = '#D9A05E';
@@ -36,7 +38,11 @@ export function CharacterSprite({
   return (
     <div
       className={`inline-block ${animate ? 'animate-idle-bob' : ''} ${className}`}
-      style={{ width: size, height: size * 1.5 }}
+      style={{
+        width: size,
+        height: size * 1.5,
+        transform: facing === 'left' ? 'scaleX(-1)' : 'none',
+      }}
     >
       <svg
         viewBox="0 0 16 24"

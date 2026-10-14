@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { CharacterSprite } from '@/components/ui/CharacterSprite';
-import { ROAD_NODES, BUILDING_DOOR_NODES, findShortestPath, MoveDirection } from '@/lib/roadGraph';
+import { ROAD_NODES, findShortestPath, MoveDirection } from '@/lib/roadGraph';
 
 interface BuildingDef {
   id: 'work' | 'townhall' | 'vault' | 'home' | 'bank' | 'market' | 'school';
@@ -130,35 +130,16 @@ const BUILDINGS: BuildingDef[] = [
   },
 ];
 
-export function Town() {
-  const router = useRouter();
-  const { state, level, activeEvent } = useGame();
+const W = 28;
+const Hh = 24;
+const ox = 320;
+const oy = 125;
 
-  // Character movement state on road graph
-  const [currentNodeId, setCurrentNodeId] = useState<string>('p_center');
-  const [charPos, setCharPos] = useState<{ x: number; y: number }>({
-    x: ROAD_NODES['p_center'].x,
-    y: ROAD_NODES['p_center'].y,
-  });
-  const [facingDir, setFacingDir] = useState<MoveDirection>('down');
-  const [isWalking, setIsWalking] = useState(false);
-  const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
+export function projectIso(x: number, y: number, z: number): [number, number] {
+  return [ox + (x - y) * W, oy + ((x + y) * W) / 2 - z * Hh];
+}
 
-  const walkingRef = useRef(false);
-  const pathQueueRef = useRef<string[]>([]);
-  const targetRouteRef = useRef<string | null>(null);
-
-  const theme = state.profile?.theme || 'system';
-  const isNight = theme === 'night';
-  const isStorm = activeEvent.type === 'debt_spiral';
-  const isStranded = activeEvent.type === 'stranded';
-
-  // Math engine matching town-reference.html
-  const W = 28;
-  const Hh = 24;
-  const ox = 320;
-  const oy = 125;
-
+function generateTownSceneElements(extraH: number, isNight: boolean): React.ReactNode[] {
   let tx = 0;
   let ty = 0;
   let k = 1;
@@ -281,9 +262,6 @@ export function Town() {
     dr(y0 - 0.06, y1 + 0.06, x + 0.01, z0 - 0.08, z1 + 0.08, '#F2E7C9');
     dr(y0, y1, x + 0.02, z0, z1, isNight ? '#FFD86B' : '#8CC6E8');
   }
-
-  // Height scaling with Level (L1 to L5)
-  const extraH = Math.max(0, (level - 1) * 0.25);
 
   function home() {
     box(1, 1, 0, 2, 2, 1.4 + extraH, '#D9A05E');
@@ -572,9 +550,35 @@ export function Town() {
   items.sort((a, b) => a[0] - b[0]);
   items.forEach((it) => it[1]());
 
-  // Screen position of Character
-  G();
-  const [charX, charY] = P(charPos.x, charPos.y, 0);
+  return elements;
+}
+
+export function Town() {
+  const router = useRouter();
+  const { state, level, activeEvent } = useGame();
+
+  // Character movement state on road graph
+  const [currentNodeId, setCurrentNodeId] = useState<string>('p_center');
+  const [charPos, setCharPos] = useState<{ x: number; y: number }>({
+    x: ROAD_NODES['p_center'].x,
+    y: ROAD_NODES['p_center'].y,
+  });
+  const [facingDir, setFacingDir] = useState<MoveDirection>('down');
+  const [isWalking, setIsWalking] = useState(false);
+  const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
+
+  const walkingRef = useRef(false);
+  const pathQueueRef = useRef<string[]>([]);
+  const targetRouteRef = useRef<string | null>(null);
+
+  const theme = state.profile?.theme || 'system';
+  const isNight = theme === 'night';
+  const isStorm = activeEvent.type === 'debt_spiral';
+  const isStranded = activeEvent.type === 'stranded';
+
+  const extraH = Math.max(0, (level - 1) * 0.25);
+  const elements = useMemo(() => generateTownSceneElements(extraH, isNight), [extraH, isNight]);
+  const [charX, charY] = projectIso(charPos.x, charPos.y, 0);
 
   // --- CR 4: Road Graph Movement & Keyboard Handlers ---
   const handleMove = useCallback((dir: MoveDirection) => {
@@ -752,6 +756,7 @@ export function Town() {
                 }
                 size={28}
                 animate={isWalking}
+                facing={facingDir === 'left' ? 'left' : 'right'}
               />
             </div>
           </foreignObject>
@@ -759,9 +764,8 @@ export function Town() {
 
         {/* CR 2 & CR 5: Name Tags & Live Badges per Section 5 */}
         {BUILDINGS.map((b) => {
-          G();
-          const [sx, sy] = P(b.frontX, b.frontY, 0);
-          const [rx, ry] = P(b.roofX, b.roofY, b.roofZ + extraH);
+          const [sx, sy] = projectIso(b.frontX, b.frontY, 0);
+          const [rx, ry] = projectIso(b.roofX, b.roofY, b.roofZ + extraH);
 
           // Name tag width: 7px per char + 14px padding (Section 5)
           const tagW = b.name.length * 7 + 14;

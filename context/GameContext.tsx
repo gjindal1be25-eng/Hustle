@@ -304,7 +304,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     dispatch({ type: 'LOAD_STATE', payload: syncedState });
-    setIsLoaded(true);
+    setTimeout(() => {
+      setIsLoaded(true);
+    }, 0);
   }, []);
 
   // Save to localStorage on state changes
@@ -401,7 +403,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         addToast('Badge Unlocked! 🏆', `You earned the "${b.id.replace('_', ' ')}" badge!`, 'success');
       });
     }
-  }, [state.transactions.length, state.goals, isLoaded, today]);
+  }, [state, isLoaded, today]);
 
   // Check for reached goals and stamp reachedDate
   useEffect(() => {
@@ -420,7 +422,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
       }
     });
-  }, [state.transactions.length, state.goals, isLoaded, today]);
+  }, [state, isLoaded, today]);
 
   // Check for triggered lessons
   const pendingLesson = useMemo(() => {
