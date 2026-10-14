@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-heading: 'Press Start 2P', monospace;
+    --font-body: 'VT323', monospace;
+  }
+
+  body {
+    font-family: var(--font-body), monospace;
+    background-color: #1b1b1f;
+    color: #FFF4D6;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: var(--font-heading), monospace;
+  }
+}
+
+.font-body {
+  font-family: var(--font-body), monospace;
+}
+
+.font-heading {
+  font-family: var(--font-heading), monospace;
+}
+
+@keyframes idleBob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-idle-bob {
+  animation: idleBob 1.8s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom retro pixel scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1B1B1F;
+}
+::-webkit-scrollbar-thumb {
+  background: #4E5561;
+  border: 1px solid #1B1B1F;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FFD95A;
+}
