@@ -185,10 +185,8 @@ export function TownCharacter({
 
           {/* Torso / Outfit */}
           <rect x="4" y="9" width="8" height="6" fill={outfitColor} />
-          {/* White Collar & Gold Belt Buckle */}
+          {/* White Collar */}
           <rect x="7" y="9" width="2" height="2" fill="#FFF4D6" />
-          <rect x="4" y="14" width="8" height="1" fill="#1B1B1F" />
-          <rect x="7" y="14" width="2" height="1" fill="#FFD95A" />
 
           {/* Arms with Walking Swing */}
           {mood === 'celebrating' ? (
@@ -255,6 +253,11 @@ export function TownCharacter({
             <rect x="9" y="20" width="4" height="2" fill={shoes} />
           </g>
         )}
+
+        {/* Black Leather Belt & Shining Gold Buckle (Rendered on top of waistband & legs) */}
+        <rect x="4" y="14" width="8" height="1.5" fill="#1B1B1F" />
+        <rect x="7" y="14" width="2" height="1.5" fill="#FFD95A" />
+        <rect x="7.5" y="14.25" width="1" height="0.75" fill="#FFF4D6" />
       </g>
     </g>
   );
