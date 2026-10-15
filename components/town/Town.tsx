@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
-import { CharacterSprite } from '@/components/ui/CharacterSprite';
+import { TownCharacter } from './TownCharacter';
+import { playButtonSound } from '@/lib/sound';
+import { MoodType } from '@/components/ui/CharacterSprite';
 import {
-  screenToWorld,
-  findNearestWalkable,
-  findAStarPath,
-  isBlocked,
+  isWalkableRoad,
+  getBuildingAtDoor,
   STAND_POINTS,
   GRID_STEP,
   Point2D,
@@ -629,147 +629,21 @@ function generateTownSceneElements(
   return elements;
 }
 
-// Helper to render route preview on ground (z = 0.01)
-function renderRoutePreview(route: Point2D[], pinBob: number) {
-  if (!route || route.length < 2) return null;
-
-  const dots: { x: number; y: number }[] = [];
-  const chevrons: { x: number; y: number; angle: number }[] = [];
-
-  let distSinceLastDot = 0.15;
-  let distSinceLastChevron = 0.45;
-
-  for (let i = 0; i < route.length - 1; i++) {
-    const p1 = route[i];
-    const p2 = route[i + 1];
-    const segLen = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-    if (segLen < 0.001) continue;
-
-    const dx = (p2.x - p1.x) / segLen;
-    const dy = (p2.y - p1.y) / segLen;
-
-    const [s1x, s1y] = projectIso(p1.x, p1.y, 0.01);
-    const [s2x, s2y] = projectIso(p1.x + dx * 0.1, p1.y + dy * 0.1, 0.01);
-    const angle = Math.atan2(s2y - s1y, s2x - s1x) * (180 / Math.PI);
-
-    let d = 0;
-    while (d < segLen) {
-      const step = 0.05;
-      d += step;
-      distSinceLastDot += step;
-      distSinceLastChevron += step;
-
-      const curX = p1.x + dx * d;
-      const curY = p1.y + dy * d;
-
-      if (distSinceLastDot >= 0.3) {
-        dots.push({ x: curX, y: curY });
-        distSinceLastDot = 0;
-      }
-      if (distSinceLastChevron >= 0.9) {
-        chevrons.push({ x: curX, y: curY, angle });
-        distSinceLastChevron = 0;
-      }
-    }
-  }
-
-  const dest = route[route.length - 1];
-  const [destBaseX, destBaseY] = projectIso(dest.x, dest.y, 0);
-  const [destPinX, destPinY] = projectIso(dest.x, dest.y, 0.65 + pinBob * 0.1);
-
-  return (
-    <g id="route-preview" pointerEvents="none">
-      {/* Route dots every 0.3 units */}
-      {dots.map((pt, idx) => {
-        const [sx, sy] = projectIso(pt.x, pt.y, 0.01);
-        return (
-          <g key={`rdot_${idx}`}>
-            <circle cx={sx} cy={sy} r="3.2" fill="#FFFFFF" opacity="0.95" />
-            <circle cx={sx} cy={sy} r="1.8" fill="#2F6FD8" />
-          </g>
-        );
-      })}
-
-      {/* Chevrons every 0.9 units */}
-      {chevrons.map((ch, idx) => {
-        const [sx, sy] = projectIso(ch.x, ch.y, 0.01);
-        return (
-          <g key={`chev_${idx}`} transform={`translate(${sx}, ${sy}) rotate(${ch.angle})`}>
-            <path
-              d="M -3.5 -2.8 L 1.8 0 L -3.5 2.8"
-              stroke="#FFFFFF"
-              strokeWidth="2.8"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M -3.5 -2.8 L 1.8 0 L -3.5 2.8"
-              stroke="#2F6FD8"
-              strokeWidth="1.6"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </g>
-        );
-      })}
-
-      {/* Destination Gold Pin */}
-      <g>
-        <ellipse cx={destBaseX} cy={destBaseY} rx="4" ry="2" fill="#1B1B1F" opacity="0.5" />
-        <line
-          x1={destBaseX}
-          y1={destBaseY}
-          x2={destPinX}
-          y2={destPinY}
-          stroke="#2F6FD8"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <polygon
-          points={`${destPinX},${destPinY - 7} ${destPinX + 5},${destPinY - 4} ${destPinX},${destPinY - 1} ${destPinX - 5},${destPinY - 4}`}
-          fill="#FFE27A"
-          stroke="#FFD95A"
-          strokeWidth="0.8"
-        />
-        <polygon
-          points={`${destPinX - 5},${destPinY - 4} ${destPinX},${destPinY - 1} ${destPinX},${destPinY + 5} ${destPinX - 5},${destPinY + 2}`}
-          fill="#D9A05E"
-          stroke="#FFD95A"
-          strokeWidth="0.8"
-        />
-        <polygon
-          points={`${destPinX},${destPinY - 1} ${destPinX + 5},${destPinY - 4} ${destPinX + 5},${destPinY + 2} ${destPinX},${destPinY + 5}`}
-          fill="#B67F41"
-          stroke="#FFD95A"
-          strokeWidth="0.8"
-        />
-      </g>
-    </g>
-  );
-}
-
 export function Town() {
   const router = useRouter();
   const { state, level, activeEvent } = useGame();
 
-  // Character movement state (0.25-grid units)
-  const [charPos, setCharPos] = useState<Point2D>({ x: 5.3, y: 6.0 }); // Start in walkable plaza
+  // Character movement state (0.25-grid units, starting on the plaza road)
+  const [charPos, setCharPos] = useState<Point2D>({ x: 5.3, y: 6.0 });
   const [isWalking, setIsWalking] = useState(false);
+  const [walkStep, setWalkStep] = useState(0);
   const [facingDir, setFacingDir] = useState<'left' | 'right'>('right');
-  const [, setDestination] = useState<Point2D | null>(null);
-  const [destinationBuildingId, setDestinationBuildingId] = useState<string | null>(null);
-  const [routePoints, setRoutePoints] = useState<Point2D[]>([]);
+  const [isEntering, setIsEntering] = useState(false);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
-  const [pinBobOffset, setPinBobOffset] = useState<number>(0);
 
   const charPosRef = useRef<Point2D>({ x: 5.3, y: 6.0 });
-  const pathRef = useRef<Point2D[]>([]);
-  const pathIdxRef = useRef<number>(0);
-  const targetRouteRef = useRef<string | null>(null);
-  const lastTimeRef = useRef<number | null>(null);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const walkTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isNavigatingRef = useRef(false);
 
   const theme = state.profile?.theme || 'system';
   const isNight = theme === 'night';
@@ -778,212 +652,73 @@ export function Town() {
 
   const extraH = Math.max(0, (level - 1) * 0.25);
 
-  // Character sprite node rendered at isometric coordinates
-  const [charIsoX, charIsoY] = projectIso(charPos.x, charPos.y, 0);
+  const mood: MoodType = isStorm
+    ? 'worried'
+    : isStranded
+    ? 'sad'
+    : activeEvent.type === 'goal_reached'
+    ? 'celebrating'
+    : 'happy';
+
+  // Character figure matching customized avatar appearance, animations, and direction
   const charSpriteNode = useMemo(
     () => (
-      <g key="character-sprite" transform={`translate(${charIsoX - 16}, ${charIsoY - 36})`}>
-        <foreignObject width="32" height="48">
-          <div className="w-full h-full flex items-center justify-center">
-            <CharacterSprite
-              hairColor={state.profile?.avatar.hairColor || '#2C1810'}
-              outfitColor={state.profile?.avatar.outfitColor || '#2B4C7E'}
-              mood={
-                isStorm
-                  ? 'worried'
-                  : isStranded
-                  ? 'sad'
-                  : activeEvent.type === 'goal_reached'
-                  ? 'celebrating'
-                  : 'happy'
-              }
-              size={28}
-              animate={isWalking}
-              facing={facingDir}
-            />
-          </div>
-        </foreignObject>
-      </g>
+      <TownCharacter
+        key="town-character"
+        x={charPos.x}
+        y={charPos.y}
+        facing={facingDir}
+        isWalking={isWalking}
+        walkStep={walkStep}
+        hairColor={state.profile?.avatar.hairColor || '#2C1810'}
+        outfitColor={state.profile?.avatar.outfitColor || '#2B4C7E'}
+        mood={mood}
+        isEntering={isEntering}
+      />
     ),
     [
-      charIsoX,
-      charIsoY,
+      charPos.x,
+      charPos.y,
+      facingDir,
+      isWalking,
+      walkStep,
       state.profile?.avatar.hairColor,
       state.profile?.avatar.outfitColor,
-      isStorm,
-      isStranded,
-      activeEvent.type,
-      isWalking,
-      facingDir,
+      mood,
+      isEntering,
     ]
   );
 
-  // Scene elements with character depth-sorted using x + y
+  // Scene elements with character depth-sorted with buildings using x + y
   const elements = useMemo(
     () => generateTownSceneElements(extraH, isNight, charPos, charSpriteNode),
     [extraH, isNight, charPos, charSpriteNode]
   );
 
-  // Start walking to any target coordinate
-  const startWalkingTo = useCallback(
-    (targetX: number, targetY: number, buildingId: string | null, route: string | null) => {
-      const start = charPosRef.current;
-      const path = findAStarPath(start.x, start.y, targetX, targetY);
-
-      if (path.length <= 1) {
-        if (route) {
-          router.push(route);
-        }
-        return;
-      }
-
-      const finalDest = path[path.length - 1];
-      setDestination(finalDest);
-      setDestinationBuildingId(buildingId);
-      targetRouteRef.current = route;
-
-      // Respect prefers-reduced-motion
-      const prefersReducedMotion =
-        typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      if (prefersReducedMotion) {
-        setRoutePoints(path);
-        setTimeout(() => {
-          charPosRef.current = finalDest;
-          setCharPos(finalDest);
-          setTimeout(() => {
-            setRoutePoints([]);
-            setDestination(null);
-            setDestinationBuildingId(null);
-            if (route) router.push(route);
-          }, 1000);
-        }, 200);
-        return;
-      }
-
-      // Live 60fps walking
-      pathRef.current = path;
-      pathIdxRef.current = 1;
-      setRoutePoints(path);
-      setIsWalking(true);
-      lastTimeRef.current = null;
-    },
-    [router]
-  );
-
-  // Animation frame loop for smooth walking (3.2 units/second)
-  useEffect(() => {
-    if (!isWalking) return;
-
-    let animId: number;
-
-    const tick = (timestamp: number) => {
-      if (!lastTimeRef.current) {
-        lastTimeRef.current = timestamp;
-      }
-      const dt = Math.min(0.05, (timestamp - lastTimeRef.current) / 1000);
-      lastTimeRef.current = timestamp;
-
-      setPinBobOffset(Math.sin(timestamp / 200));
-
-      const path = pathRef.current;
-      const idx = pathIdxRef.current;
-
-      if (idx >= path.length) {
-        setIsWalking(false);
-        setRoutePoints([]);
-        setDestination(null);
-        setDestinationBuildingId(null);
-        if (targetRouteRef.current) {
-          router.push(targetRouteRef.current);
-          targetRouteRef.current = null;
-        }
-        return;
-      }
-
-      const current = charPosRef.current;
-      const target = path[idx];
-      const vx = target.x - current.x;
-      const vy = target.y - current.y;
-      const dist = Math.hypot(vx, vy);
-
-      const moveStep = 3.2 * dt;
-
-      if (vx < -0.02) {
-        setFacingDir('left');
-      } else if (vx > 0.02) {
-        setFacingDir('right');
-      }
-
-      if (dist <= moveStep) {
-        charPosRef.current = { x: target.x, y: target.y };
-        setCharPos({ x: target.x, y: target.y });
-        pathIdxRef.current = idx + 1;
-        setRoutePoints([target, ...path.slice(idx + 1)]);
-      } else {
-        const nextX = current.x + (vx / dist) * moveStep;
-        const nextY = current.y + (vy / dist) * moveStep;
-        charPosRef.current = { x: nextX, y: nextY };
-        setCharPos({ x: nextX, y: nextY });
-        setRoutePoints([{ x: nextX, y: nextY }, ...path.slice(idx)]);
-      }
-
-      animId = requestAnimationFrame(tick);
-    };
-
-    animId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animId);
-  }, [isWalking, router]);
-
-  // Click ground on island to move
-  const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
-
-    const worldP = screenToWorld(svgP.x, svgP.y);
-    const walkable = findNearestWalkable(worldP.x, worldP.y);
-
-    startWalkingTo(walkable.x, walkable.y, null, null);
-  };
-
-  // Click a building: walk to its stand point on road, then open page
-  const handleBuildingClick = (e: React.MouseEvent, bDef: BuildingDef) => {
+  // Click a building: step directly into the doorway, then open menu
+  const handleBuildingClick = (e: React.MouseEvent | React.KeyboardEvent, bDef: BuildingDef) => {
     e.stopPropagation();
-    const stand = STAND_POINTS[bDef.id];
-    const curr = charPosRef.current;
-
-    if (Math.hypot(curr.x - stand.x, curr.y - stand.y) < 0.35) {
+    if (isNavigatingRef.current) return;
+    const sp = STAND_POINTS[bDef.id];
+    setCharPos(sp);
+    charPosRef.current = sp;
+    setIsEntering(true);
+    playButtonSound();
+    isNavigatingRef.current = true;
+    setTimeout(() => {
       router.push(bDef.route);
-      return;
-    }
-
-    startWalkingTo(stand.x, stand.y, bDef.id, bDef.route);
+    }, 140);
   };
 
-  // Keyboard navigation (Arrow keys + WASD + Esc to stop)
+  // Keyboard navigation: move strictly on the road with arrow keys (and WASD)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA' ||
-        document.activeElement?.tagName === 'SELECT'
+        document.activeElement?.tagName === 'SELECT' ||
+        isNavigatingRef.current
       ) {
-        return;
-      }
-
-      if (e.key === 'Escape') {
-        setIsWalking(false);
-        pathRef.current = [];
-        setRoutePoints([]);
-        setDestination(null);
-        setDestinationBuildingId(null);
-        targetRouteRef.current = null;
         return;
       }
 
@@ -1001,10 +736,13 @@ export function Town() {
         const curr = charPosRef.current;
         const b = BUILDINGS.find((bld) => {
           const sp = STAND_POINTS[bld.id];
-          return Math.hypot(curr.x - sp.x, curr.y - sp.y) < 0.6;
+          return Math.hypot(curr.x - sp.x, curr.y - sp.y) < 1.0;
         });
         if (b) {
-          router.push(b.route);
+          playButtonSound();
+          setIsEntering(true);
+          isNavigatingRef.current = true;
+          setTimeout(() => router.push(b.route), 140);
         }
         return;
       } else {
@@ -1012,22 +750,43 @@ export function Town() {
       }
 
       e.preventDefault();
-      const nextX = Math.round((charPosRef.current.x + dx) / GRID_STEP) * GRID_STEP;
-      const nextY = Math.round((charPosRef.current.y + dy) / GRID_STEP) * GRID_STEP;
+      const curr = charPosRef.current;
+      const nextX = Math.round((curr.x + dx) / GRID_STEP) * GRID_STEP;
+      const nextY = Math.round((curr.y + dy) / GRID_STEP) * GRID_STEP;
 
-      if (!isBlocked(nextX, nextY)) {
+      // Restrict movement strictly to the road, plaza, or building doorways
+      if (isWalkableRoad(nextX, nextY)) {
         if (dx < 0) setFacingDir('left');
         else if (dx > 0) setFacingDir('right');
 
         charPosRef.current = { x: nextX, y: nextY };
         setCharPos({ x: nextX, y: nextY });
+        setWalkStep((s) => s + 1);
         setIsWalking(true);
-        setTimeout(() => setIsWalking(false), 150);
+
+        if (walkTimerRef.current) clearTimeout(walkTimerRef.current);
+        walkTimerRef.current = setTimeout(() => {
+          setIsWalking(false);
+        }, 160);
+
+        // Check if character moved INTO a building doorway
+        const door = getBuildingAtDoor(nextX, nextY);
+        if (door) {
+          setIsEntering(true);
+          playButtonSound();
+          isNavigatingRef.current = true;
+          setTimeout(() => {
+            router.push(door.route);
+          }, 140);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (walkTimerRef.current) clearTimeout(walkTimerRef.current);
+    };
   }, [router]);
 
   // Sky colors based on time and weather
@@ -1038,12 +797,10 @@ export function Town() {
   return (
     <div className="relative w-full max-w-[760px] mx-auto select-none overflow-hidden rounded-none border-[3px] border-[#3B2516] bg-[#121316] shadow-[0_8px_0_#1B1B1F]">
       <svg
-        ref={svgRef}
         id="town-canvas"
         viewBox="-10 0 700 530"
         role="img"
-        onClick={handleSvgClick}
-        className="w-full h-auto block cursor-crosshair"
+        className="w-full h-auto block cursor-default"
         style={{ display: 'block' }}
       >
         <title>Hustle Floating Island RPG Town</title>
@@ -1087,11 +844,8 @@ export function Town() {
           </g>
         )}
 
-        {/* 3D Isometric Polygons Render with depth-sorted character sprite */}
+        {/* 3D Isometric Polygons Render with depth-sorted character figure */}
         <g id="scene-elements">{elements}</g>
-
-        {/* Route Preview on ground (dots, chevrons, bobbing pin) */}
-        {renderRoutePreview(routePoints, pinBobOffset)}
 
         {/* Building Click Hitspots, Live Badges & Highlighted Name Tags */}
         {BUILDINGS.map((b) => {
@@ -1100,7 +854,6 @@ export function Town() {
 
           const tagW = Math.round(b.name.length * 6.6 + 14);
           const isHovered = hoveredBuilding === b.id;
-          const isDestination = destinationBuildingId === b.id;
 
           let liveBadge: string | null = null;
           if (b.id === 'market') {
@@ -1130,7 +883,7 @@ export function Town() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  startWalkingTo(STAND_POINTS[b.id].x, STAND_POINTS[b.id].y, b.id, b.route);
+                  handleBuildingClick(e, b);
                 }
               }}
             >
@@ -1169,7 +922,7 @@ export function Town() {
                 </g>
               )}
 
-              {/* Name Tag: highlighted in gold if destination */}
+              {/* Name Tag: highlighted in gold if hovered */}
               <g transform={`translate(${sx}, ${sy + 6})`}>
                 <rect
                   x={-tagW / 2}
@@ -1177,10 +930,10 @@ export function Town() {
                   width={tagW}
                   height="17"
                   rx="3"
-                  fill={isDestination ? '#FFD95A' : '#FFF6E0'}
-                  opacity={isHovered || isDestination ? 1.0 : 0.92}
-                  stroke={isDestination ? '#997300' : isHovered ? '#FFD95A' : '#D9A05E'}
-                  strokeWidth={isDestination || isHovered ? 2 : 1}
+                  fill={isHovered ? '#FFD95A' : '#FFF6E0'}
+                  opacity={isHovered ? 1.0 : 0.92}
+                  stroke={isHovered ? '#FFD95A' : '#D9A05E'}
+                  strokeWidth={isHovered ? 2 : 1}
                 />
                 <text
                   x="0"

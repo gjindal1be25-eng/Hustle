@@ -4,6 +4,8 @@ import {
   worldToScreen,
   isBlocked,
   isRoadOrPlaza,
+  isWalkableRoad,
+  getBuildingAtDoor,
   findNearestWalkable,
   findAStarPath,
   STAND_POINTS,
@@ -87,5 +89,32 @@ describe('Town Grid & Pathfinding Engine (Prompt 2)', () => {
       expect(end.x).toBeCloseTo(target.x, 1);
       expect(end.y).toBeCloseTo(target.y, 1);
     });
+  });
+
+  it('strictly restricts walkable road to road, plaza and doorways, disallowing grass and water', () => {
+    // On roads & plaza:
+    expect(isWalkableRoad(5.3, 3.25)).toBe(true); // Main road intersection
+    expect(isWalkableRoad(2.0, 3.25)).toBe(true); // Road outside Work
+    expect(isWalkableRoad(10.8, 3.25)).toBe(true); // Bridge
+    expect(isWalkableRoad(5.3, 6.0)).toBe(true); // Plaza
+    expect(isWalkableRoad(5.3, 9.8)).toBe(true); // Front road
+    expect(isWalkableRoad(2.0, 2.5)).toBe(true); // Work doorway
+
+    // Off road (grass, water, pond, well):
+    expect(isWalkableRoad(0.5, 0.5)).toBe(false); // Grass corner
+    expect(isWalkableRoad(5.3, 5.0)).toBe(false); // Well in plaza
+    expect(isWalkableRoad(10.8, 1.0)).toBe(false); // River
+    expect(isWalkableRoad(8.5, 10.6)).toBe(false); // Lawn pond
+    expect(isWalkableRoad(3.0, 8.0)).toBe(false); // Lawn grass between roads
+
+    // Building door triggers:
+    expect(getBuildingAtDoor(2.0, 2.5)?.id).toBe('work');
+    expect(getBuildingAtDoor(5.3, 2.5)?.id).toBe('townhall');
+    expect(getBuildingAtDoor(8.6, 2.5)?.id).toBe('vault');
+    expect(getBuildingAtDoor(2.0, 5.6)?.id).toBe('home');
+    expect(getBuildingAtDoor(8.6, 6.0)?.id).toBe('bank');
+    expect(getBuildingAtDoor(2.0, 9.2)?.id).toBe('market');
+    expect(getBuildingAtDoor(8.6, 9.2)?.id).toBe('school');
+    expect(getBuildingAtDoor(5.3, 6.0)).toBeNull(); // Plaza is not a doorway
   });
 });

@@ -40,7 +40,84 @@ export function worldToScreen(x: number, y: number, z = 0): [number, number] {
   return [ox + (x - y) * W, oy + ((x + y) * W) / 2 - z * Hh];
 }
 
-// Check if a point is within road or plaza (cost 0.6)
+export interface BuildingDoorDef {
+  id: string;
+  name: string;
+  route: string;
+  doorX: number;
+  doorY: number;
+  trigger: (x: number, y: number) => boolean;
+}
+
+export const BUILDING_DOORS: BuildingDoorDef[] = [
+  {
+    id: 'work',
+    name: 'Work',
+    route: '/work',
+    doorX: 2.0,
+    doorY: 2.5,
+    trigger: (x, y) => x >= 1.7 && x <= 2.3 && y >= 2.2 && y <= 2.6,
+  },
+  {
+    id: 'townhall',
+    name: 'Town Hall',
+    route: '/townhall',
+    doorX: 5.3,
+    doorY: 2.5,
+    trigger: (x, y) => x >= 5.0 && x <= 5.6 && y >= 2.2 && y <= 2.6,
+  },
+  {
+    id: 'vault',
+    name: 'Vault',
+    route: '/vault',
+    doorX: 8.6,
+    doorY: 2.5,
+    trigger: (x, y) => x >= 8.3 && x <= 8.9 && y >= 2.2 && y <= 2.6,
+  },
+  {
+    id: 'home',
+    name: 'Home',
+    route: '/story',
+    doorX: 2.0,
+    doorY: 5.6,
+    trigger: (x, y) => x >= 1.7 && x <= 2.3 && y >= 5.3 && y <= 5.8,
+  },
+  {
+    id: 'bank',
+    name: 'Bank',
+    route: '/bank',
+    doorX: 8.6,
+    doorY: 6.0,
+    trigger: (x, y) => x >= 8.3 && x <= 8.9 && y >= 5.7 && y <= 6.1,
+  },
+  {
+    id: 'market',
+    name: 'Market',
+    route: '/market',
+    doorX: 2.0,
+    doorY: 9.2,
+    trigger: (x, y) => x >= 1.7 && x <= 2.3 && y >= 8.9 && y <= 9.35,
+  },
+  {
+    id: 'school',
+    name: 'School',
+    route: '/school',
+    doorX: 8.6,
+    doorY: 9.2,
+    trigger: (x, y) => x >= 8.3 && x <= 8.9 && y >= 8.9 && y <= 9.35,
+  },
+];
+
+export function getBuildingAtDoor(x: number, y: number): BuildingDoorDef | null {
+  for (const b of BUILDING_DOORS) {
+    if (b.trigger(x, y)) {
+      return b;
+    }
+  }
+  return null;
+}
+
+// Check if a point is strictly on the walkable road, plaza, or building door entrances
 export function isRoadOrPlaza(x: number, y: number): boolean {
   // Main horizontal road & east bank: y in [3.0, 3.5]
   if (y >= 2.95 && y <= 3.55 && ((x >= 0.75 && x <= 10.05) || (x >= 11.4 && x <= 12.35))) {
@@ -62,23 +139,47 @@ export function isRoadOrPlaza(x: number, y: number): boolean {
   if (y >= 9.55 && y <= 10.05 && x >= 1.75 && x <= 8.85) {
     return true;
   }
-  // Stubs
-  if (x >= 1.75 && x <= 2.25 && ((y >= 2.65 && y <= 3.05) || (y >= 5.85 && y <= 6.55) || (y >= 9.35 && y <= 9.65))) {
+  // Stubs & Doorway entrances to buildings
+  // Work: x in [1.75, 2.25], y from 2.2 to 3.05
+  if (x >= 1.75 && x <= 2.25 && y >= 2.2 && y <= 3.05) {
     return true;
   }
-  if (x >= 5.05 && x <= 5.55 && y >= 2.65 && y <= 3.05) {
+  // Town hall: x in [5.05, 5.55], y from 2.2 to 3.05
+  if (x >= 5.05 && x <= 5.55 && y >= 2.2 && y <= 3.05) {
     return true;
   }
-  if (x >= 8.35 && x <= 8.85 && ((y >= 2.65 && y <= 3.05) || (y >= 6.35 && y <= 6.65) || (y >= 9.35 && y <= 9.65))) {
+  // Vault: x in [8.35, 8.85], y from 2.2 to 3.05
+  if (x >= 8.35 && x <= 8.85 && y >= 2.2 && y <= 3.05) {
     return true;
   }
-  // Cobblestone Plaza: [3.9, 6.7] x [3.6, 6.4]
-  if (x >= 3.9 && x <= 6.7 && y >= 3.6 && y <= 6.4) {
+  // Home: x in [1.75, 2.25], y from 5.3 && 6.55
+  if (x >= 1.75 && x <= 2.25 && y >= 5.3 && y <= 6.55) {
+    return true;
+  }
+  // Bank: x in [8.35, 8.85], y from 5.7 && 6.65
+  if (x >= 8.35 && x <= 8.85 && y >= 5.7 && y <= 6.65) {
+    return true;
+  }
+  // Market: x in [1.75, 2.25], y from 8.9 && 9.65
+  if (x >= 1.75 && x <= 2.25 && y >= 8.9 && y <= 9.65) {
+    return true;
+  }
+  // School: x in [8.35, 8.85], y from 8.9 && 9.65
+  if (x >= 8.35 && x <= 8.85 && y >= 8.9 && y <= 9.65) {
+    return true;
+  }
+  // Cobblestone Plaza: [3.9, 6.7] x [3.6, 6.4] (except well)
+  if (x >= 3.85 && x <= 6.75 && y >= 3.55 && y <= 6.45) {
+    if (x >= 4.9 && x <= 5.7 && y >= 4.6 && y <= 5.4) {
+      return false; // Well
+    }
     return true;
   }
 
   return false;
 }
+
+export const isWalkableRoad = isRoadOrPlaza;
 
 // Check if a point is blocked by buildings, water, scenery, fences, etc.
 export function isBlocked(x: number, y: number): boolean {
@@ -87,21 +188,42 @@ export function isBlocked(x: number, y: number): boolean {
     return true;
   }
 
-  // 1. Building Footprints
-  // Work: [1.18, 2.78] x [1.25, 2.85]
-  if (x >= 1.15 && x <= 2.8 && y >= 1.2 && y <= 2.85) return true;
-  // Town hall: [4.14, 6.86] x [0.8, 2.72]
-  if (x >= 4.14 && x <= 6.86 && y >= 0.8 && y <= 2.72) return true;
-  // Vault: [7.78, 10.02] x [1.38, 3.1]
-  if (x >= 7.78 && x <= 10.02 && y >= 1.38 && y <= 3.1) return true;
-  // Home: [1.7, 3.3] x [4.0, 5.8]
-  if (x >= 1.7 && x <= 3.3 && y >= 4.0 && y <= 5.8) return true;
-  // Bank: [6.74, 9.46] x [4.4, 6.25] (door stand point at 8.6, 6.4)
-  if (x >= 6.74 && x <= 9.46 && y >= 4.4 && y <= 6.25) return true;
-  // Market: [1.4, 3.8] x [7.16, 9.35] (stand point at 2.0, 9.7)
-  if (x >= 1.4 && x <= 3.8 && y >= 7.16 && y <= 9.35) return true;
-  // School: [7.25, 9.65] x [7.6, 9.35] (stand point at 8.6, 9.7)
-  if (x >= 7.25 && x <= 9.65 && y >= 7.6 && y <= 9.35) return true;
+  // 1. Building Footprints (doorway entrances carved out so sprite can walk in)
+  // Work: [1.15, 2.8] x [1.2, 2.85] (doorway at [1.75, 2.25] x [2.2, 2.85])
+  if (x >= 1.15 && x <= 2.8 && y >= 1.2 && y <= 2.85) {
+    if (x >= 1.75 && x <= 2.25 && y >= 2.2) return false;
+    return true;
+  }
+  // Town hall: [4.14, 6.86] x [0.8, 2.72] (doorway at [5.05, 5.55] x [2.2, 2.72])
+  if (x >= 4.14 && x <= 6.86 && y >= 0.8 && y <= 2.72) {
+    if (x >= 5.05 && x <= 5.55 && y >= 2.2) return false;
+    return true;
+  }
+  // Vault: [7.78, 10.02] x [1.38, 3.1] (doorway at [8.35, 8.85] x [2.2, 3.1])
+  if (x >= 7.78 && x <= 10.02 && y >= 1.38 && y <= 3.1) {
+    if (x >= 8.35 && x <= 8.85 && y >= 2.2) return false;
+    return true;
+  }
+  // Home: [1.7, 3.3] x [4.0, 5.8] (doorway at [1.75, 2.25] x [5.3, 5.8])
+  if (x >= 1.7 && x <= 3.3 && y >= 4.0 && y <= 5.8) {
+    if (x >= 1.75 && x <= 2.25 && y >= 5.3) return false;
+    return true;
+  }
+  // Bank: [6.74, 9.46] x [4.4, 6.25] (doorway at [8.35, 8.85] x [5.7, 6.25])
+  if (x >= 6.74 && x <= 9.46 && y >= 4.4 && y <= 6.25) {
+    if (x >= 8.35 && x <= 8.85 && y >= 5.7) return false;
+    return true;
+  }
+  // Market: [1.4, 3.8] x [7.16, 9.35] (doorway at [1.75, 2.25] x [8.9, 9.35])
+  if (x >= 1.4 && x <= 3.8 && y >= 7.16 && y <= 9.35) {
+    if (x >= 1.75 && x <= 2.25 && y >= 8.9) return false;
+    return true;
+  }
+  // School: [7.25, 9.65] x [7.6, 9.35] (doorway at [8.35, 8.85] x [8.9, 9.35])
+  if (x >= 7.25 && x <= 9.65 && y >= 7.6 && y <= 9.35) {
+    if (x >= 8.35 && x <= 8.85 && y >= 8.9) return false;
+    return true;
+  }
 
   // 2. Plaza Well: [4.95, 5.65] x [4.65, 5.35]
   if (x >= 4.9 && x <= 5.7 && y >= 4.6 && y <= 5.4) return true;

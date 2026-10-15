@@ -59,3 +59,34 @@
   - All lists capped at 3 items with a "See all (X)" toggle link.
   - Budgets tab in `/market` simplified to clean progress bars with inline edit links.
 
+## Prompt 5: Keyboard Road Navigation, Building Doorway Entry & Custom Character
+- **Keyboard-Only Movement (`components/town/Town.tsx`)**:
+  - Disabled mouse click-to-walk ground targeting on the town canvas (`handleSvgClick` removed; canvas set to `cursor-default`).
+  - Movement driven exclusively via keyboard Arrow keys (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`) and `WASD`.
+  - Grid movement step size tuned to 0.15 tiles with instant keyboard event handling for crisp, responsive player control.
+- **Strict Road-Only Boundaries (`lib/townGrid.ts`)**:
+  - Implemented `isWalkableRoad(x, y)` which strictly confines movement to the road network:
+    - Main horizontal road spanning `x in [0.7, 9.3], y in [3.4, 4.6]` (incorporating stone bridge and east river bank).
+    - Lower horizontal road spanning `x in [0.7, 9.3], y in [7.4, 8.6]`.
+    - Central vertical spine `x in [4.4, 5.6], y in [1.8, 10.2]` connecting all branches.
+    - Central cobblestone plaza `x in [3.5, 6.5], y in [4.2, 7.8]` (with stone well center blocked).
+    - Dedicated door stubs and thresholds for all 7 buildings.
+  - Off-road grass, water/river, scenic trees, bushes, lamps, and obstacles are strictly non-walkable.
+- **Building Doorway Entry & Menu Transition**:
+  - Mapped exact doorway coordinates for all 7 town buildings in `BUILDING_DOORS` and `getBuildingAtDoor(x, y)`:
+    - Work (`x in [1.7, 2.3], y <= 2.6` -> `/work`)
+    - Town Hall (`x in [5.0, 5.6], y <= 2.6` -> `/townhall`)
+    - Vault (`x in [8.3, 8.9], y <= 2.6` -> `/vault`)
+    - Home (`x in [1.7, 2.3], y <= 5.8` -> `/story`)
+    - Bank (`x in [8.3, 8.9], y <= 6.1` -> `/bank`)
+    - Market (`x in [1.7, 2.3], y <= 9.35` -> `/market`)
+    - School (`x in [8.3, 8.9], y <= 9.35` -> `/school`)
+  - Stepping into a doorway plays an entry sound cue and immediately navigates into the building's menu.
+  - Added navigation transition lock (`isNavigatingRef`) to eliminate duplicate triggers and race conditions.
+  - Keyboard `Enter` or `Space` near any building door steps into the doorway and triggers entry.
+- **Custom Designed Character Figure (`components/town/TownCharacter.tsx`)**:
+  - Built pure SVG pixel-art character directly on the SVG canvas, completely replacing foreignObject-based rendering.
+  - Eliminates macOS WebKit/Safari foreignObject clipping, paint failure, and scaling bugs.
+  - Dynamically reflects custom player profile attributes (`profile.avatar.hairColor` and `profile.avatar.outfitColor`).
+  - Features retro pixel cap, dynamic facial expression / mouth per mood, gold belt buckle, swinging arms, alternating leg stride (`walkStep`), horizontal flip on left/right facing, and soft ground shadow.
+
