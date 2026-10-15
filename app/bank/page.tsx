@@ -49,10 +49,10 @@ export default function BankPage() {
       <div className="w-full max-w-[720px] px-3 sm:px-4 py-4 space-y-4 flex-1">
         <WoodFrame
           title="TOWN BANK & LOAN SIMULATOR"
-          subtitle="Explore debt mathematics, compound interest, and EMI sustainability"
+          subtitle="Explore the mathematics of debt, compound interest, and EMI sustainability"
         >
           {/* Single Calm Stone Panel with Gold Tab Underline */}
-          <StonePanel className="space-y-4">
+          <StonePanel title="Loan EMI Simulator" className="space-y-4">
             {/* Tabs with Gold Underline */}
             <div className="flex border-b border-[#4B515A] gap-6 pb-2">
               <button
@@ -82,8 +82,8 @@ export default function BankPage() {
             {/* Tab 1: Loan Simulator */}
             {activeTab === 'simulator' && (
               <div className="space-y-4 font-sans text-xs sm:text-sm">
-                {/* 3-Field Single Row / Column Form */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 3-Field Single Row / Column Form with balanced labels and aligned inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                   <PixelInput
                     label="Principal (₹)"
                     prefix="₹"
@@ -96,7 +96,7 @@ export default function BankPage() {
                   />
 
                   <PixelInput
-                    label="Annual Interest (%)"
+                    label="Annual Rate (%)"
                     type="number"
                     min="0"
                     max="60"
@@ -117,30 +117,30 @@ export default function BankPage() {
                   />
                 </div>
 
-                {/* 4-Metric Result Strip */}
+                {/* 4-Metric Result Strip matching retro pixel theme */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
-                  <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                    <span className="text-[11px] text-[#B4BAC4] block uppercase">Monthly EMI</span>
-                    <strong className="text-sm sm:text-base font-mono text-[#FFD95A] block mt-0.5">
+                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
+                    <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Monthly EMI</span>
+                    <strong className="text-base sm:text-lg font-heading text-[#FFD95A] block mt-1">
                       ₹{simSummary.emi.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                    <span className="text-[11px] text-[#B4BAC4] block uppercase">Total Interest</span>
-                    <strong className="text-sm sm:text-base font-mono text-[#EE6A5E] block mt-0.5">
+                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
+                    <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Total Interest</span>
+                    <strong className="text-base sm:text-lg font-heading text-[#EE6A5E] block mt-1">
                       ₹{simSummary.totalInterest.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                    <span className="text-[11px] text-[#B4BAC4] block uppercase">Total Payable</span>
-                    <strong className="text-sm sm:text-base font-mono text-[#FFF4D6] block mt-0.5">
+                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
+                    <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Total Payable</span>
+                    <strong className="text-base sm:text-lg font-heading text-[#FFF4D6] block mt-1">
                       ₹{simSummary.totalPayable.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                    <span className="text-[11px] text-[#B4BAC4] block uppercase">EMI-to-Income</span>
+                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
+                    <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">EMI-to-Income</span>
                     <strong
-                      className={`text-sm sm:text-base font-mono block mt-0.5 ${
+                      className={`text-base sm:text-lg font-heading block mt-1 ${
                         isHighRisk ? 'text-[#EE6A5E]' : 'text-[#79CE5E]'
                       }`}
                     >
@@ -151,15 +151,17 @@ export default function BankPage() {
 
                 {/* High Debt Warning */}
                 {isHighRisk && (
-                  <div className="p-2.5 bg-[#3A2222] border border-[#EE6A5E] text-xs text-[#FFF4D6]">
-                    <strong className="text-[#EE6A5E] block mb-0.5">⚠️ High Debt Load Warning (&gt;40% Income)</strong>
+                  <div className="p-3 bg-[#3A2222] border-2 border-[#EE6A5E] text-xs sm:text-sm text-[#FFF4D6] shadow-[inset_1px_1px_0_rgba(0,0,0,0.4)]">
+                    <strong className="text-[#EE6A5E] block mb-1 font-heading text-xs uppercase tracking-wider">
+                      ⚠️ High Debt Load Warning (&gt;40% Income)
+                    </strong>
                     <span>
                       Borrowing this amount consumes {(simSummary.emiToIncome * 100).toFixed(0)}% of your monthly earnings. Exceeding 40% will trigger a debt spiral event!
                     </span>
                   </div>
                 )}
 
-                {/* Exactly One Primary Action Button per screen in solid gold */}
+                {/* Action Area: Take Loan Button OR Prominent Active Loan Card */}
                 <div className="pt-2">
                   {!activeLoan ? (
                     <PixelButton
@@ -171,22 +173,33 @@ export default function BankPage() {
                       Take Loan & Start EMI Schedule
                     </PixelButton>
                   ) : (
-                    <div className="text-center py-2 text-xs text-[#B4BAC4]">
-                      <span>Active loan already active. </span>
-                      <button
-                        type="button"
+                    <div className="p-3.5 bg-[#2E333B] border-2 border-[#D4A373] text-[#FFF4D6] shadow-[inset_1px_1px_0_rgba(255,255,255,0.06)] flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 text-center sm:text-left">
+                        <span className="text-2xl select-none">🔒</span>
+                        <div>
+                          <div className="font-heading text-xs sm:text-sm text-[#FFD95A] uppercase tracking-wider">
+                            Active Loan In Progress
+                          </div>
+                          <div className="text-xs sm:text-sm text-[#FFF4D6] mt-0.5 font-body">
+                            Active loan already in progress. Pay it off before taking another.
+                          </div>
+                        </div>
+                      </div>
+                      <PixelButton
+                        variant="primary"
+                        size="sm"
                         onClick={() => setActiveTab('active')}
-                        className="text-[#FFD95A] underline hover:text-[#FFE885] cursor-pointer"
+                        className="whitespace-nowrap"
                       >
-                        View active loan details ➔
-                      </button>
+                        View & Pay Off Loan ➔
+                      </PixelButton>
                     </div>
                   )}
                 </div>
 
                 {/* Financial Wisdom Note */}
-                <p className="text-xs text-[#B4BAC4] pt-2 border-t border-[#4B515A]/60 leading-relaxed">
-                  Financial note: High-interest consumer loans trade future freedom for present consumption. Always verify total interest and sustainability before borrowing.
+                <p className="text-xs sm:text-sm text-[#B4BAC4] pt-2 border-t border-[#4B515A]/60 leading-relaxed font-body">
+                  <span className="text-[#FFD95A] font-semibold">Financial note:</span> High-interest consumer loans trade future freedom for present consumption. Always verify total interest and sustainability before borrowing.
                 </p>
               </div>
             )}
@@ -197,33 +210,33 @@ export default function BankPage() {
                 {activeLoan ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                      <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                        <span className="text-[11px] text-[#B4BAC4] block uppercase">Principal</span>
-                        <strong className="text-sm sm:text-base font-mono text-[#FFF4D6] block mt-0.5">
+                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
+                        <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Principal</span>
+                        <strong className="text-base sm:text-lg font-heading text-[#FFF4D6] block mt-1">
                           ₹{activeLoan.principal.toLocaleString('en-IN')}
                         </strong>
                       </div>
-                      <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                        <span className="text-[11px] text-[#B4BAC4] block uppercase">Rate</span>
-                        <strong className="text-sm sm:text-base font-mono text-[#FFD95A] block mt-0.5">
+                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
+                        <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Rate</span>
+                        <strong className="text-base sm:text-lg font-heading text-[#FFD95A] block mt-1">
                           {activeLoan.annualRatePct}% p.a.
                         </strong>
                       </div>
-                      <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                        <span className="text-[11px] text-[#B4BAC4] block uppercase">Monthly EMI</span>
-                        <strong className="text-sm sm:text-base font-mono text-[#EE6A5E] block mt-0.5">
+                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
+                        <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Monthly EMI</span>
+                        <strong className="text-base sm:text-lg font-heading text-[#EE6A5E] block mt-1">
                           ₹{calculateEMI(activeLoan.principal, activeLoan.annualRatePct, activeLoan.months).toLocaleString('en-IN')}
                         </strong>
                       </div>
-                      <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                        <span className="text-[11px] text-[#B4BAC4] block uppercase">EMIs Paid</span>
-                        <strong className="text-sm sm:text-base font-mono text-[#79CE5E] block mt-0.5">
+                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
+                        <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">EMIs Paid</span>
+                        <strong className="text-base sm:text-lg font-heading text-[#79CE5E] block mt-1">
                           {emisPaidCount} / {activeLoan.months}
                         </strong>
                       </div>
                     </div>
 
-                    <p className="text-xs text-[#B4BAC4]">
+                    <p className="text-xs sm:text-sm text-[#FFF4D6] leading-relaxed">
                       EMIs post automatically on your monthly anniversary date. You can choose to retire the liability early below.
                     </p>
 

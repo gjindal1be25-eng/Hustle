@@ -33,16 +33,14 @@ export default function HomePage() {
       <HudBar />
 
       {/* Main Town Shell Container */}
-      <div className="w-full max-w-4xl px-3 sm:px-6 py-4 flex flex-col items-center gap-4 flex-1">
+      <div className="w-full max-w-[890px] px-3 sm:px-6 py-4 flex flex-col items-center gap-4 flex-1">
         {/* Floating Isometric Town SVG */}
         <div className="w-full">
           <Town />
         </div>
 
-
-
         {/* 96px Bottom RPG Dialogue Text Box */}
-        <div className="w-full mt-auto pt-2">
+        <div className="w-full max-w-[850px] mt-auto pt-2">
           <RpgTextBox />
         </div>
       </div>

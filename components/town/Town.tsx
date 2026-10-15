@@ -43,8 +43,8 @@ const BUILDINGS: BuildingDef[] = [
     frontX: 3.07,
     frontY: 3.14,
     roofX: 1.98,
-    roofY: 1.65,
-    roofZ: 3.4,
+    roofY: 2.05,
+    roofZ: 3.2,
   },
   {
     id: 'townhall',
@@ -58,8 +58,8 @@ const BUILDINGS: BuildingDef[] = [
     frontX: 5.3,
     frontY: 3.3,
     roofX: 5.5,
-    roofY: 1.4,
-    roofZ: 3.8,
+    roofY: 1.72,
+    roofZ: 3.7,
   },
   {
     id: 'vault',
@@ -74,7 +74,7 @@ const BUILDINGS: BuildingDef[] = [
     frontY: 3.3,
     roofX: 8.9,
     roofY: 2.5,
-    roofZ: 3.4,
+    roofZ: 3.1,
   },
   {
     id: 'home',
@@ -89,7 +89,7 @@ const BUILDINGS: BuildingDef[] = [
     frontY: 6.4,
     roofX: 2.5,
     roofY: 4.8,
-    roofZ: 2.4,
+    roofZ: 2.3,
   },
   {
     id: 'bank',
@@ -103,8 +103,8 @@ const BUILDINGS: BuildingDef[] = [
     frontX: 8.6,
     frontY: 6.4,
     roofX: 8.1,
-    roofY: 5.3,
-    roofZ: 4.4,
+    roofY: 5.45,
+    roofZ: 3.1,
   },
   {
     id: 'market',
@@ -119,7 +119,7 @@ const BUILDINGS: BuildingDef[] = [
     frontY: 9.7,
     roofX: 2.6,
     roofY: 8.2,
-    roofZ: 2.2,
+    roofZ: 1.95,
   },
   {
     id: 'school',
@@ -134,7 +134,7 @@ const BUILDINGS: BuildingDef[] = [
     frontY: 9.58,
     roofX: 8.45,
     roofY: 8.25,
-    roofZ: 3.2,
+    roofZ: 2.9,
   },
 ];
 
@@ -795,7 +795,7 @@ export function Town() {
   const skyBot = isStorm ? '#748091' : isNight ? '#2A3A7A' : '#CFEEFF';
 
   return (
-    <div className="relative w-full max-w-[760px] mx-auto select-none overflow-hidden rounded-none border-[3px] border-[#3B2516] bg-[#121316] shadow-[0_8px_0_#1B1B1F]">
+    <div className="relative w-full max-w-[850px] mx-auto select-none overflow-hidden rounded-none border-[3px] border-[#3B2516] bg-[#121316] shadow-[0_8px_0_#1B1B1F]">
       <svg
         id="town-canvas"
         viewBox="-10 0 700 530"
@@ -872,6 +872,10 @@ export function Town() {
             if (state.loan?.active) liveBadge = '📜 DEBT';
           }
 
+          const midX = (sx + rx) / 2;
+          const midY = (sy + ry) / 2;
+          const hitRadiusY = Math.max(38, Math.abs(sy - ry) / 2 + 12);
+
           return (
             <g
               key={b.id}
@@ -887,17 +891,18 @@ export function Town() {
                 }
               }}
             >
-              {/* Click circle hotspot */}
-              <circle
-                cx={sx}
-                cy={sy - 15}
-                r="42"
+              {/* Click hit area covering roof down to doorstep */}
+              <ellipse
+                cx={midX}
+                cy={midY}
+                rx="46"
+                ry={hitRadiusY}
                 fill="transparent"
               />
 
-              {/* Live Badge floating above roof */}
+              {/* Live Badge floating directly above the Name Tag on the roof */}
               {liveBadge && (
-                <g transform={`translate(${rx}, ${ry - 14})`}>
+                <g transform={`translate(${rx}, ${ry - 30})`}>
                   <rect
                     x="-24"
                     y="-9"
@@ -922,8 +927,8 @@ export function Town() {
                 </g>
               )}
 
-              {/* Name Tag: highlighted in gold if hovered */}
-              <g transform={`translate(${sx}, ${sy + 6})`}>
+              {/* Name Tag: ON TOP OF BUILDING (Roof Apex) */}
+              <g transform={`translate(${rx}, ${ry - 10})`}>
                 <rect
                   x={-tagW / 2}
                   y="-8"
@@ -931,9 +936,9 @@ export function Town() {
                   height="17"
                   rx="3"
                   fill={isHovered ? '#FFD95A' : '#FFF6E0'}
-                  opacity={isHovered ? 1.0 : 0.92}
-                  stroke={isHovered ? '#FFD95A' : '#D9A05E'}
-                  strokeWidth={isHovered ? 2 : 1}
+                  opacity={isHovered ? 1.0 : 0.94}
+                  stroke={isHovered ? '#B38B00' : '#8A5A2B'}
+                  strokeWidth={isHovered ? 2 : 1.2}
                 />
                 <text
                   x="0"
@@ -942,7 +947,7 @@ export function Town() {
                   fontFamily="var(--font-body), monospace, sans-serif"
                   fontSize="11"
                   fontWeight="bold"
-                  fill="#2B3440"
+                  fill={isHovered ? '#1B1B1F' : '#2B3440'}
                 >
                   {b.name}
                 </text>

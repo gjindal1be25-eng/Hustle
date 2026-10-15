@@ -90,3 +90,17 @@
   - Dynamically reflects custom player profile attributes (`profile.avatar.hairColor` and `profile.avatar.outfitColor`).
   - Features retro pixel cap, dynamic facial expression / mouth per mood, gold belt buckle, swinging arms, alternating leg stride (`walkStep`), horizontal flip on left/right facing, and soft ground shadow.
 
+## Prompt 6: Final Pass, Building Labels on Roof & Enlarged Island Window
+- **Building Labels Positioned on Roof (`components/town/Town.tsx`)**:
+  - Moved all 7 building name tags from the ground doorstep (`sx, sy + 6`) strictly to the roof apex (`rx, ry - 10`).
+  - Calibrated exact roof world coordinates (`roofX, roofY, roofZ`) for Work, Town Hall, Vault, Home, Bank, Market, and School to place each tag right on the roof ridge or dome.
+  - Stacked live status badges (`⚠️ OVER`, `🏆 GOAL`, `📜 DEBT`) above the name tags (`rx, ry - 30`), creating a clean, unoccluded visual hierarchy.
+  - Expanded clickable hotspot from a small ground circle to an ellipse encompassing the entire building structure and roof tag, ensuring clicks anywhere on the building register effortlessly.
+- **Enlarged Island Window (`components/town/Town.tsx` & `app/page.tsx`)**:
+  - Scaled town frame max width from `max-w-[760px]` to `max-w-[850px]` (~12% larger, more immersive and legible without overflowing).
+  - Expanded main town page shell wrapper from `max-w-4xl` to `max-w-[890px]`, aligning the RPG dialogue box (`max-w-[850px]`) seamlessly underneath.
+- **Full Quality Assurance & Verification**:
+  - Zero TypeScript compiler issues (`npx tsc --noEmit` clean).
+  - Zero ESLint warnings or errors (`npm run lint` clean).
+  - 33/33 Vitest unit tests green, including new tests verifying building roof projection heights (`ry < sy - 40`) and canvas bounding limits.
+

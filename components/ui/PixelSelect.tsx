@@ -11,6 +11,7 @@ interface PixelSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   options: Option[];
   error?: string;
+  labelClassName?: string;
 }
 
 export function PixelSelect({
@@ -18,13 +19,14 @@ export function PixelSelect({
   options,
   error,
   className = '',
+  labelClassName = '',
   ...props
 }: PixelSelectProps) {
   return (
     <div className="w-full flex flex-col gap-1.5 font-body">
       {label && (
-        <label className="text-xs sm:text-sm font-heading text-[#FFF4D6] uppercase tracking-wider">
-          {label}
+        <label className={`text-[11px] sm:text-xs font-heading text-[#FFF4D6] uppercase tracking-wide flex justify-between min-h-[1.75rem] sm:min-h-[2rem] items-end ${labelClassName}`}>
+          <span className="leading-snug">{label}</span>
         </label>
       )}
 

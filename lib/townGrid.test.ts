@@ -117,4 +117,34 @@ describe('Town Grid & Pathfinding Engine (Prompt 2)', () => {
     expect(getBuildingAtDoor(8.6, 9.2)?.id).toBe('school');
     expect(getBuildingAtDoor(5.3, 6.0)).toBeNull(); // Plaza is not a doorway
   });
+
+  it('guarantees building roofs project strictly above ground doorways and fit in viewBox', () => {
+    const roofs = [
+      { id: 'work', rx: 1.98, ry: 2.05, rz: 3.2, fx: 3.07, fy: 3.14 },
+      { id: 'townhall', rx: 5.5, ry: 1.72, rz: 3.7, fx: 5.3, fy: 3.3 },
+      { id: 'vault', rx: 8.9, ry: 2.5, rz: 3.1, fx: 8.6, fy: 3.3 },
+      { id: 'home', rx: 2.5, ry: 4.8, rz: 2.3, fx: 2.0, fy: 6.4 },
+      { id: 'bank', rx: 8.1, ry: 5.45, rz: 3.1, fx: 8.6, fy: 6.4 },
+      { id: 'market', rx: 2.6, ry: 8.2, rz: 1.95, fx: 2.0, fy: 9.7 },
+      { id: 'school', rx: 8.45, ry: 8.25, rz: 2.9, fx: 9.70, fy: 9.58 },
+    ];
+
+    roofs.forEach((b) => {
+      const [screenRoofX, screenRoofY] = worldToScreen(b.rx, b.ry, b.rz);
+      const [, screenGroundY] = worldToScreen(b.fx, b.fy, 0);
+
+      // In SVG space, smaller Y is vertically higher (on top of the building)
+      expect(screenRoofY).toBeLessThan(screenGroundY - 40);
+
+      // Label is placed at screenRoofY - 10, check that it fits inside the viewBox (-10 0 700 530)
+      const labelY = screenRoofY - 10;
+      expect(labelY).toBeGreaterThan(40);
+      expect(labelY).toBeLessThan(450);
+
+      // Check horizontal bounds fit within 700 width with margins
+      expect(screenRoofX).toBeGreaterThan(50);
+      expect(screenRoofX).toBeLessThan(650);
+    });
+  });
 });
+

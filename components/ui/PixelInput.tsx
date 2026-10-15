@@ -7,6 +7,7 @@ interface PixelInputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   helperText?: string;
   prefix?: string;
+  labelClassName?: string;
 }
 
 export function PixelInput({
@@ -15,13 +16,14 @@ export function PixelInput({
   helperText,
   prefix,
   className = '',
+  labelClassName = '',
   ...props
 }: PixelInputProps) {
   return (
     <div className="w-full flex flex-col gap-1.5 font-body">
       {label && (
-        <label className="text-xs sm:text-sm font-heading text-[#FFF4D6] uppercase tracking-wider flex justify-between">
-          <span>{label}</span>
+        <label className={`text-[11px] sm:text-xs font-heading text-[#FFF4D6] uppercase tracking-wide flex justify-between min-h-[1.75rem] sm:min-h-[2rem] items-end ${labelClassName}`}>
+          <span className="leading-snug">{label}</span>
         </label>
       )}
 
