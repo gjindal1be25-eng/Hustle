@@ -15,6 +15,7 @@ import {
   findNearestWalkable,
   findAStarPath,
 } from '@/lib/townGrid';
+import { getTodayISO } from '@/lib/rules';
 import { TOWN_NPCS, FINANCIAL_DILEMMAS, NpcDef, Dilemma } from '@/lib/gameplay';
 import { SheruPet } from './SheruPet';
 import { TownNpcSprite } from './TownNpcSprite';
@@ -793,19 +794,16 @@ export function Town() {
     return null;
   }, [charPos.x, charPos.y]);
 
-  // Pet Sheru position & proximity
+  const today = getTodayISO();
+  const hasPettedToday = state.lastPettedDate === today;
+
+  // Pet Sheru position (stays near the cobblestone plaza fountain & well)
   const petPos = useMemo(() => {
-    const isGoodSavings = avgMonthlyIncome > 0 ? netSavings / avgMonthlyIncome >= 0.2 : balance > 0;
-    if (isGoodSavings) {
-      // Sheru loyally trots behind player when saving well
-      return { x: charPos.x - 0.45, y: charPos.y + 0.35 };
-    }
-    // Otherwise Sheru hangs out near the town well/fountain
     return { x: 5.8, y: 5.4 };
-  }, [charPos.x, charPos.y, avgMonthlyIncome, netSavings, balance]);
+  }, []);
 
   const isNearSheru = useMemo(() => {
-    return Math.hypot(charPos.x - petPos.x, charPos.y - petPos.y) < 1.4;
+    return Math.hypot(charPos.x - petPos.x, charPos.y - petPos.y) < 1.3;
   }, [charPos.x, charPos.y, petPos.x, petPos.y]);
 
   // Unresolved dilemma trigger check
@@ -1003,17 +1001,6 @@ export function Town() {
         activeKeysRef.current.add(keyLower);
       } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
-        if (isNearSheru) {
-          petDog();
-          setSheruPettedAnim(true);
-          setTimeout(() => setSheruPettedAnim(false), 2000);
-          return;
-        }
-        if (nearestNpc) {
-          setSelectedNpc(nearestNpc);
-          playButtonSound();
-          return;
-        }
         const curr = charPosRef.current;
         const b = BUILDINGS.find((bld) => {
           const sp = STAND_POINTS[bld.id];
@@ -1024,6 +1011,18 @@ export function Town() {
           setIsEntering(true);
           isNavigatingRef.current = true;
           setTimeout(() => router.push(b.route), 140);
+          return;
+        }
+        if (nearestNpc) {
+          setSelectedNpc(nearestNpc);
+          playButtonSound();
+          return;
+        }
+        if (isNearSheru) {
+          petDog();
+          setSheruPettedAnim(true);
+          setTimeout(() => setSheruPettedAnim(false), 2000);
+          return;
         }
       } else if (keyLower === 'e') {
         e.preventDefault();
@@ -1495,35 +1494,8 @@ export function Town() {
         </div>
       </div>
 
-      {/* Floating Action Banners: Dynamic for NPCs, Sheru Pet, and Doorways */}
-      {nearestNpc && !isEntering ? (
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedNpc(nearestNpc);
-            playButtonSound();
-          }}
-          className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2 animate-bounce"
-        >
-          <span>💬</span>
-          <span>Talk to {nearestNpc.name} (Press E or SPACE)</span>
-          <span>➔</span>
-        </button>
-      ) : isNearSheru && !isEntering ? (
-        <button
-          type="button"
-          onClick={() => {
-            petDog();
-            setSheruPettedAnim(true);
-            setTimeout(() => setSheruPettedAnim(false), 2000);
-          }}
-          className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2 animate-bounce"
-        >
-          <span>🐾</span>
-          <span>Pet Sheru (+Happiness! Press SPACE or E)</span>
-          <span>❤️</span>
-        </button>
-      ) : nearbyBuilding && !isEntering ? (
+      {/* Floating Action Banners: Dynamic for Doorways and NPCs */}
+      {nearbyBuilding && !isEntering ? (
         <button
           type="button"
           onClick={() => {
@@ -1539,6 +1511,19 @@ export function Town() {
         >
           <span>🚪</span>
           <span>Enter {BUILDINGS.find((b) => b.id === nearbyBuilding)?.name} (Press SPACE/ENTER)</span>
+          <span>➔</span>
+        </button>
+      ) : nearestNpc && !isEntering ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedNpc(nearestNpc);
+            playButtonSound();
+          }}
+          className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2 animate-bounce"
+        >
+          <span>💬</span>
+          <span>Talk to {nearestNpc.name} (Press E or SPACE)</span>
           <span>➔</span>
         </button>
       ) : null}
@@ -1588,17 +1573,6 @@ export function Town() {
               <button
                 type="button"
                 onClick={() => {
-                  if (isNearSheru) {
-                    petDog();
-                    setSheruPettedAnim(true);
-                    setTimeout(() => setSheruPettedAnim(false), 2000);
-                    return;
-                  }
-                  if (nearestNpc) {
-                    setSelectedNpc(nearestNpc);
-                    playButtonSound();
-                    return;
-                  }
                   const curr = charPosRef.current;
                   const b = BUILDINGS.find((bld) => {
                     const sp = STAND_POINTS[bld.id];
@@ -1609,25 +1583,41 @@ export function Town() {
                     setIsEntering(true);
                     isNavigatingRef.current = true;
                     setTimeout(() => router.push(b.route), 140);
+                    return;
+                  }
+                  if (nearestNpc) {
+                    setSelectedNpc(nearestNpc);
+                    playButtonSound();
+                    return;
+                  }
+                  if (isNearSheru) {
+                    petDog();
+                    setSheruPettedAnim(true);
+                    setTimeout(() => setSheruPettedAnim(false), 2000);
+                    return;
                   }
                 }}
                 className={`w-8 h-8 border font-heading text-[9px] flex items-center justify-center cursor-pointer shadow-sm select-none transition-colors ${
-                  isNearSheru || nearestNpc || nearbyBuilding
+                  nearbyBuilding
+                    ? 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold'
+                    : nearestNpc
+                    ? 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold'
+                    : isNearSheru && !hasPettedToday
                     ? 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold'
                     : 'bg-[#3A3F47] text-[#B4BAC4] border-[#4E5561]'
                 }`}
                 title={
-                  isNearSheru
-                    ? 'Pet Sheru'
+                  nearbyBuilding
+                    ? 'Enter building'
                     : nearestNpc
                     ? `Talk to ${nearestNpc.name}`
-                    : nearbyBuilding
-                    ? 'Enter building'
+                    : isNearSheru
+                    ? 'Pet Sheru'
                     : 'Action'
                 }
                 aria-label="Action / Enter"
               >
-                {isNearSheru ? 'PET' : nearestNpc ? 'TALK' : nearbyBuilding ? 'IN' : 'OK'}
+                {nearbyBuilding ? 'IN' : nearestNpc ? 'TALK' : isNearSheru && !hasPettedToday ? 'PET' : 'OK'}
               </button>
 
               <button
