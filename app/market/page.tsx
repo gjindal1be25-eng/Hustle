@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
@@ -11,6 +12,8 @@ import { RpgTextBox } from '@/components/ui/RpgTextBox';
 import { HudBar } from '@/components/ui/HudBar';
 import { getTodayISO } from '@/lib/rules';
 import { NeedWantTag } from '@/lib/types';
+import { NEEDS_WANTS_ITEMS, NeedsWantsItem } from '@/lib/gameplay';
+import { playButtonSound, playCoinSound, playFanfareSound, playWarningSound } from '@/lib/sound';
 
 export default function MarketPage() {
   const {
@@ -22,11 +25,24 @@ export default function MarketPage() {
     updateCategoryLimit,
     renameCategory,
     deleteCategory,
+    addRenown,
   } = useGame();
 
-  const [activeTab, setActiveTab] = useState<'log' | 'budgets'>('log');
+  const [activeTab, setActiveTab] = useState<'log' | 'budgets' | 'blitz'>('log');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showAllHistory, setShowAllHistory] = useState(false);
+
+  // Blitz Mini-game State
+  const [blitzPlaying, setBlitzPlaying] = useState(false);
+  const [blitzTimeLeft, setBlitzTimeLeft] = useState(25);
+  const [blitzScore, setBlitzScore] = useState(0);
+  const [blitzStreak, setBlitzStreak] = useState(0);
+  const [blitzMaxStreak, setBlitzMaxStreak] = useState(0);
+  const [blitzItemIdx, setBlitzItemIdx] = useState(0);
+  const [blitzFeedback, setBlitzFeedback] = useState<{ text: string; correct: boolean } | null>(null);
+  const [blitzFinished, setBlitzFinished] = useState(false);
+  const [blitzShuffledItems, setBlitzShuffledItems] = useState<NeedsWantsItem[]>(NEEDS_WANTS_ITEMS);
+  const [blitzRenownEarned, setBlitzRenownEarned] = useState(0);
 
   // Form states
   const [amount, setAmount] = useState<string>('');
@@ -102,6 +118,85 @@ export default function MarketPage() {
     setEditingNameId(null);
   };
 
+  // Blitz 25s Countdown Timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (blitzPlaying && blitzTimeLeft > 0) {
+      timer = setInterval(() => {
+        setBlitzTimeLeft((t) => {
+          if (t <= 1) {
+            setBlitzPlaying(false);
+            setBlitzFinished(true);
+            playFanfareSound();
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [blitzPlaying, blitzTimeLeft]);
+
+  // When blitz finishes, calculate and award renown once
+  useEffect(() => {
+    if (blitzFinished && blitzScore > 0) {
+      const reward = Math.max(10, Math.round(blitzScore / 4) + blitzMaxStreak * 2);
+      setBlitzRenownEarned(reward);
+      addRenown(reward, 'Needs vs Wants Blitz');
+    }
+  }, [blitzFinished, blitzScore, blitzMaxStreak, addRenown]);
+
+  const startBlitz = () => {
+    const shuffled = [...NEEDS_WANTS_ITEMS].sort(() => Math.random() - 0.5);
+    setBlitzShuffledItems(shuffled);
+    setBlitzItemIdx(0);
+    setBlitzScore(0);
+    setBlitzStreak(0);
+    setBlitzMaxStreak(0);
+    setBlitzFeedback(null);
+    setBlitzRenownEarned(0);
+    setBlitzTimeLeft(25);
+    setBlitzFinished(false);
+    setBlitzPlaying(true);
+    playButtonSound();
+  };
+
+  const handleBlitzChoice = (choice: 'need' | 'want') => {
+    if (!blitzPlaying) return;
+    const currentItem = blitzShuffledItems[blitzItemIdx];
+    const isCorrect = currentItem.type === choice;
+    if (isCorrect) {
+      playCoinSound();
+      const newStreak = blitzStreak + 1;
+      const points = 10 * Math.min(newStreak, 4);
+      setBlitzScore((s) => s + points);
+      setBlitzStreak(newStreak);
+      setBlitzMaxStreak((m) => Math.max(m, newStreak));
+      setBlitzFeedback({
+        text: `+${points} pts! ${currentItem.name} is a ${choice.toUpperCase()}!`,
+        correct: true,
+      });
+    } else {
+      playWarningSound();
+      setBlitzStreak(0);
+      setBlitzFeedback({
+        text: `Oops! ${currentItem.name} is a ${currentItem.type.toUpperCase()}!`,
+        correct: false,
+      });
+    }
+    setTimeout(() => {
+      setBlitzFeedback(null);
+      if (blitzItemIdx + 1 < blitzShuffledItems.length) {
+        setBlitzItemIdx((i) => i + 1);
+      } else {
+        setBlitzShuffledItems([...NEEDS_WANTS_ITEMS].sort(() => Math.random() - 0.5));
+        setBlitzItemIdx(0);
+      }
+    }, 450);
+  };
+
   const displayedExpenses = showAllHistory ? expenses : expenses.slice(0, 3);
 
   return (
@@ -116,7 +211,7 @@ export default function MarketPage() {
           {/* Single Calm Stone Panel with Gold Tab Underline */}
           <StonePanel className="space-y-4">
             {/* Tabs with Gold Underline */}
-            <div className="flex border-b border-[#4B515A] gap-6 pb-2">
+            <div className="flex border-b border-[#4B515A] gap-4 sm:gap-6 pb-2">
               <button
                 type="button"
                 onClick={() => setActiveTab('log')}
@@ -138,6 +233,17 @@ export default function MarketPage() {
                 }`}
               >
                 Budgets & History
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('blitz')}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
+                  activeTab === 'blitz'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
+                }`}
+              >
+                Needs vs Wants Blitz ⚡
               </button>
             </div>
 
@@ -541,6 +647,151 @@ export default function MarketPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Tab 3: Needs vs. Wants Blitz Arcade */}
+            {activeTab === 'blitz' && (
+              <div className="space-y-4 font-sans text-xs sm:text-sm">
+                {!blitzPlaying && !blitzFinished ? (
+                  /* Blitz Start Splash Screen */
+                  <div className="p-4 sm:p-6 bg-[#23252B] border-2 border-[#B79A60] text-center space-y-4">
+                    <div className="text-4xl animate-bounce">⚡🛒</div>
+                    <div className="space-y-1">
+                      <h3 className="text-base sm:text-lg font-heading text-[#FFD95A]">
+                        NEEDS VS. WANTS BLITZ
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#FFF4D6] max-w-md mx-auto leading-relaxed">
+                        Sharpen your financial reflexes! You have <strong>25 seconds</strong> to sort everyday purchases into <strong>NEEDS</strong> (survival & non-negotiables) vs <strong>WANTS</strong> (lifestyle & optional).
+                      </p>
+                    </div>
+
+                    <div className="flex justify-center gap-2 sm:gap-4 text-xs font-mono text-[#B4BAC4]">
+                      <span className="p-2 bg-[#1B1B1F] border border-[#4B515A]">⏱️ 25s Timer</span>
+                      <span className="p-2 bg-[#1B1B1F] border border-[#4B515A]">🔥 Combo Streaks</span>
+                      <span className="p-2 bg-[#1B1B1F] border border-[#4B515A]">⭐ Earns Renown</span>
+                    </div>
+
+                    <div className="pt-2 max-w-xs mx-auto">
+                      <PixelButton variant="primary" size="lg" fullWidth onClick={startBlitz}>
+                        START BLITZ ⚡
+                      </PixelButton>
+                    </div>
+                  </div>
+                ) : blitzPlaying ? (
+                  /* Active Gameplay Card */
+                  <div className="p-4 sm:p-6 bg-[#23252B] border-2 border-[#FFD95A] space-y-4 relative overflow-hidden">
+                    {/* Header stats bar */}
+                    <div className="flex items-center justify-between pb-3 border-b border-[#4B515A]">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-heading text-[#B4BAC4]">TIME:</span>
+                        <span className={`text-base font-mono font-bold ${blitzTimeLeft <= 5 ? 'text-[#EE6A5E] animate-ping' : 'text-[#FFD95A]'}`}>
+                          {blitzTimeLeft}s
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {blitzStreak >= 2 && (
+                          <span className="text-[11px] font-heading px-2 py-0.5 bg-[#FFD95A] text-[#1B1B1F] font-bold rounded animate-pulse">
+                            {blitzStreak}x COMBO 🔥
+                          </span>
+                        )}
+                        <span className="text-sm font-mono font-bold text-[#FFF4D6]">
+                          {blitzScore} PTS
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Flashcard Item */}
+                    <div className="py-6 sm:py-8 bg-[#1B1B1F] border border-[#4B515A] rounded flex flex-col items-center justify-center text-center space-y-2 relative">
+                      <span className="text-5xl sm:text-6xl mb-1 transform hover:scale-110 transition-transform">
+                        {blitzShuffledItems[blitzItemIdx]?.icon}
+                      </span>
+                      <h4 className="text-base sm:text-lg font-heading text-[#FFF4D6]">
+                        {blitzShuffledItems[blitzItemIdx]?.name}
+                      </h4>
+                      <span className="text-[11px] px-2 py-0.5 bg-[#2E333B] text-[#B4BAC4] border border-[#4B515A] uppercase tracking-wider">
+                        {blitzShuffledItems[blitzItemIdx]?.category}
+                      </span>
+
+                      {/* Feedback overlay */}
+                      {blitzFeedback && (
+                        <div
+                          className={`absolute inset-0 flex items-center justify-center font-heading text-sm sm:text-base font-bold bg-[#1B1B1F]/90 backdrop-blur-xs animate-fadeIn ${
+                            blitzFeedback.correct ? 'text-[#79CE5E]' : 'text-[#EE6A5E]'
+                          }`}
+                        >
+                          {blitzFeedback.text}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Big Action Choice Buttons */}
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleBlitzChoice('need')}
+                        className="py-4 px-3 bg-[#1D3A2A] hover:bg-[#2A5C3D] text-[#79CE5E] border-2 border-[#79CE5E] font-heading text-sm sm:text-base font-bold shadow-[0_4px_0_#0D1F15] active:translate-y-1 active:shadow-none cursor-pointer transition-all flex flex-col items-center gap-1 select-none"
+                      >
+                        <span className="text-xl">🥗</span>
+                        <span>NEED</span>
+                        <span className="text-[10px] text-[#A2E394] font-normal hidden sm:inline">Essential / Survival</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleBlitzChoice('want')}
+                        className="py-4 px-3 bg-[#3A1D1D] hover:bg-[#5C2A2A] text-[#EE6A5E] border-2 border-[#EE6A5E] font-heading text-sm sm:text-base font-bold shadow-[0_4px_0_#1F0D0D] active:translate-y-1 active:shadow-none cursor-pointer transition-all flex flex-col items-center gap-1 select-none"
+                      >
+                        <span className="text-xl">🎁</span>
+                        <span>WANT</span>
+                        <span className="text-[10px] text-[#FFA8A0] font-normal hidden sm:inline">Discretionary / Luxury</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Game Finished Recap Screen */
+                  <div className="p-4 sm:p-6 bg-[#23252B] border-2 border-[#79CE5E] text-center space-y-4 animate-fadeIn">
+                    <div className="text-4xl">🏆</div>
+                    <div className="space-y-1">
+                      <h3 className="text-base sm:text-lg font-heading text-[#FFD95A]">
+                        BLITZ COMPLETED!
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#FFF4D6]">
+                        Superb reflexes! You categorized expenses with lightning speed.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto font-mono text-center">
+                      <div className="p-2 bg-[#1B1B1F] border border-[#4B515A]">
+                        <span className="text-[10px] text-[#B4BAC4] block uppercase">Score</span>
+                        <span className="text-sm sm:text-base font-bold text-[#FFD95A]">{blitzScore}</span>
+                      </div>
+                      <div className="p-2 bg-[#1B1B1F] border border-[#4B515A]">
+                        <span className="text-[10px] text-[#B4BAC4] block uppercase">Max Combo</span>
+                        <span className="text-sm sm:text-base font-bold text-[#79CE5E]">{blitzMaxStreak}x</span>
+                      </div>
+                      <div className="p-2 bg-[#1B1B1F] border border-[#4B515A]">
+                        <span className="text-[10px] text-[#B4BAC4] block uppercase">Renown</span>
+                        <span className="text-sm sm:text-base font-bold text-[#FFD95A]">+{blitzRenownEarned} ⭐</span>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 bg-[#1B1B1F] border border-[#B79A60] text-xs text-[#FFF4D6] max-w-md mx-auto">
+                      ⭐ <strong>+{blitzRenownEarned} Renown</strong> has been credited to your town! Use it to commission civic decorations at Town Hall.
+                    </div>
+
+                    <div className="flex gap-3 justify-center pt-2 max-w-sm mx-auto">
+                      <PixelButton variant="primary" size="md" fullWidth onClick={startBlitz}>
+                        PLAY AGAIN ⚡
+                      </PixelButton>
+                      <Link href="/" className="w-full">
+                        <PixelButton variant="wood" size="md" fullWidth>
+                          TOWN MAP
+                        </PixelButton>
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </StonePanel>

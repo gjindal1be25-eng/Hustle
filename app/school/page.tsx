@@ -9,11 +9,20 @@ import { PixelButton } from '@/components/ui/PixelButton';
 import { RpgTextBox } from '@/components/ui/RpgTextBox';
 import { HudBar } from '@/components/ui/HudBar';
 import { LESSONS } from '@/lib/constants';
+import { FINANCIAL_QUIZ_QUESTIONS } from '@/lib/gameplay';
+import { playCoinSound, playFanfareSound, playWarningSound } from '@/lib/sound';
 
 export default function SchoolPage() {
-  const { state } = useGame();
-  const [activeTab, setActiveTab] = useState<'unlocked' | 'locked'>('unlocked');
+  const { state, addRenown } = useGame();
+  const [activeTab, setActiveTab] = useState<'unlocked' | 'locked' | 'quiz'>('unlocked');
   const [showAll, setShowAll] = useState(false);
+
+  // Speed Quiz state
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [isAnswerChecked, setIsAnswerChecked] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizFinished, setQuizFinished] = useState(false);
 
   const unlockedLessonIds = new Set(
     state.lessonsSeen.map((l) => l.lessonId)
@@ -24,6 +33,48 @@ export default function SchoolPage() {
 
   const currentLessons = activeTab === 'unlocked' ? unlockedLessons : lockedLessons;
   const displayedLessons = showAll ? currentLessons : currentLessons.slice(0, 3);
+
+  const handleOptionSelect = (idx: number) => {
+    if (isAnswerChecked) return;
+    setSelectedOption(idx);
+  };
+
+  const handleCheckAnswer = () => {
+    if (selectedOption === null || isAnswerChecked) return;
+    const q = FINANCIAL_QUIZ_QUESTIONS[quizIndex];
+    const isCorrect = selectedOption === q.correctIndex;
+    setIsAnswerChecked(true);
+    if (isCorrect) {
+      playCoinSound();
+      setQuizScore((s) => s + 1);
+    } else {
+      playWarningSound();
+    }
+  };
+
+  const handleNextQuestion = () => {
+    if (quizIndex + 1 < FINANCIAL_QUIZ_QUESTIONS.length) {
+      setQuizIndex((i) => i + 1);
+      setSelectedOption(null);
+      setIsAnswerChecked(false);
+    } else {
+      setQuizFinished(true);
+      playFanfareSound();
+      const finalScore = quizScore;
+      const renownWon = finalScore * 25;
+      if (renownWon > 0) {
+        addRenown(renownWon, 'School Wisdom Quiz');
+      }
+    }
+  };
+
+  const handleRestartQuiz = () => {
+    setQuizIndex(0);
+    setSelectedOption(null);
+    setIsAnswerChecked(false);
+    setQuizScore(0);
+    setQuizFinished(false);
+  };
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen bg-[#1B1B1F]">
@@ -47,14 +98,14 @@ export default function SchoolPage() {
             </div>
 
             {/* Tabs with Gold Underline */}
-            <div className="flex border-b border-[#4B515A] gap-6 pb-2">
+            <div className="flex border-b border-[#4B515A] gap-4 sm:gap-6 pb-2 overflow-x-auto">
               <button
                 type="button"
                 onClick={() => {
                   setActiveTab('unlocked');
                   setShowAll(false);
                 }}
-                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors shrink-0 ${
                   activeTab === 'unlocked'
                     ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
                     : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
@@ -68,7 +119,7 @@ export default function SchoolPage() {
                   setActiveTab('locked');
                   setShowAll(false);
                 }}
-                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors shrink-0 ${
                   activeTab === 'locked'
                     ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
                     : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
@@ -76,79 +127,238 @@ export default function SchoolPage() {
               >
                 Locked Clues ({lockedLessons.length})
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('quiz');
+                  setShowAll(false);
+                }}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors shrink-0 flex items-center gap-1.5 ${
+                  activeTab === 'quiz'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
+                }`}
+              >
+                <span>Speed Quiz ⚡</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#FFD95A]/20 text-[#FFD95A] font-mono">
+                  +25 ⭐
+                </span>
+              </button>
             </div>
 
-            {/* Lesson Cards (Last 3 items + See all link) */}
-            <div className="space-y-3 font-sans text-xs sm:text-sm">
-              <div className="flex justify-between items-center pb-1">
-                <span className="text-xs text-[#B4BAC4] uppercase tracking-wider">
-                  {activeTab === 'unlocked' ? 'Unlocked Wisdom' : 'Clues to Discover'}
-                </span>
-                {currentLessons.length > 3 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAll(!showAll)}
-                    className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline cursor-pointer"
-                  >
-                    {showAll ? 'Show latest 3' : `See all (${currentLessons.length})`}
-                  </button>
-                )}
-              </div>
+            {/* Tab 1 & 2: Lesson Cards for Unlocked / Locked */}
+            {(activeTab === 'unlocked' || activeTab === 'locked') && (
+              <div className="space-y-3 font-sans text-xs sm:text-sm">
+                <div className="flex justify-between items-center pb-1">
+                  <span className="text-xs text-[#B4BAC4] uppercase tracking-wider">
+                    {activeTab === 'unlocked' ? 'Unlocked Wisdom' : 'Clues to Discover'}
+                  </span>
+                  {currentLessons.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAll(!showAll)}
+                      className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline cursor-pointer"
+                    >
+                      {showAll ? 'Show latest 3' : `See all (${currentLessons.length})`}
+                    </button>
+                  )}
+                </div>
 
-              {currentLessons.length === 0 ? (
-                <p className="text-center italic py-4 text-xs text-[#B4BAC4]">
-                  {activeTab === 'unlocked'
-                    ? 'No scrolls unlocked yet. Log your first earnings or goals to unlock a scroll!'
-                    : 'All 8 scrolls have been unlocked! You have mastered the town curriculum! 🎓'}
-                </p>
-              ) : (
-                <div className="space-y-2.5">
-                  {displayedLessons.map((lesson) => {
-                    const isUnlocked = unlockedLessonIds.has(lesson.id);
-                    return (
+                {currentLessons.length === 0 ? (
+                  <p className="text-center italic py-4 text-xs text-[#B4BAC4]">
+                    {activeTab === 'unlocked'
+                      ? 'No scrolls unlocked yet. Log your first earnings or goals to unlock a scroll!'
+                      : 'All 8 scrolls have been unlocked! You have mastered the town curriculum! 🎓'}
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {displayedLessons.map((lesson) => {
+                      const isUnlocked = unlockedLessonIds.has(lesson.id);
+                      return (
+                        <div
+                          key={lesson.id}
+                          className={`p-3 border space-y-1.5 ${
+                            isUnlocked ? 'border-[#4B515A] bg-[#2E333B]' : 'border-[#4B515A]/60 bg-[#25282E] opacity-75'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <span className="text-[11px] text-[#FFD95A] font-bold uppercase block">
+                                Scroll #{lesson.id} · {lesson.book}
+                              </span>
+                              <h4 className="font-heading text-xs sm:text-sm text-[#FFF4D6]">
+                                {lesson.title}
+                              </h4>
+                            </div>
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
+                                isUnlocked
+                                  ? 'bg-[#2A9D8F]/20 text-[#2A9D8F] border border-[#2A9D8F]/40'
+                                  : 'bg-[#B4BAC4]/20 text-[#B4BAC4] border border-[#4B515A]'
+                              }`}
+                            >
+                              {isUnlocked ? 'MASTERED' : 'LOCKED'}
+                            </span>
+                          </div>
+
+                          {isUnlocked ? (
+                            <p className="text-xs text-[#FFF4D6] italic leading-relaxed">
+                              &ldquo;{lesson.cardText}&rdquo;
+                            </p>
+                          ) : (
+                            <div className="text-xs text-[#B4BAC4]">
+                              <strong className="text-[#FFD95A] block mb-0.5">How to unlock:</strong>
+                              <p>{lesson.triggerHint}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Return button */}
+                <div className="pt-2">
+                  <Link href="/" className="block">
+                    <PixelButton variant="primary" size="md" fullWidth>
+                      Return to Town Map
+                    </PixelButton>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Financial Wisdom Speed Quiz */}
+            {activeTab === 'quiz' && (
+              <div className="space-y-4 font-sans text-xs sm:text-sm animate-fadeIn">
+                {quizFinished ? (
+                  <div className="bg-[#23252B] p-5 rounded border border-[#B79A60] space-y-4 text-center">
+                    <div className="space-y-1">
+                      <span className="text-4xl block">📜</span>
+                      <h3 className="text-base sm:text-lg font-heading text-[#FFD95A]">
+                        QUIZ COMPLETE!
+                      </h3>
+                      <p className="text-xs text-[#FFF4D6]">
+                        You tested your mastery of the classical financial books.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto text-center">
+                      <div className="p-3 bg-[#1B1B1F] rounded border border-[#4B515A]">
+                        <span className="text-[10px] text-[#B4BAC4] block uppercase">Correct Answers</span>
+                        <span className="text-lg font-bold font-mono text-[#FFD95A]">
+                          {quizScore} / {FINANCIAL_QUIZ_QUESTIONS.length}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-[#1B1B1F] rounded border border-[#2A9D8F]">
+                        <span className="text-[10px] text-[#B4BAC4] block uppercase">Renown Earned</span>
+                        <span className="text-lg font-bold font-mono text-[#2A9D8F]">
+                          +{quizScore * 25} ⭐
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 justify-center pt-2">
+                      <PixelButton variant="primary" onClick={handleRestartQuiz}>
+                        Retake Quiz 🔄
+                      </PixelButton>
+                      <Link href="/">
+                        <PixelButton variant="stone">
+                          Return to Town Map ➔
+                        </PixelButton>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-[#23252B] p-4 rounded border border-[#4B515A] space-y-4">
+                    {/* Progress Header */}
+                    <div className="flex justify-between items-center text-xs pb-2 border-b border-[#4B515A]">
+                      <span className="text-[#FFD95A] font-heading">
+                        QUESTION {quizIndex + 1} OF {FINANCIAL_QUIZ_QUESTIONS.length}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-[#1B1B1F] border border-[#B79A60] text-[#FFD95A] text-[10px] font-bold">
+                        📖 {FINANCIAL_QUIZ_QUESTIONS[quizIndex].book}
+                      </span>
+                    </div>
+
+                    {/* Question text */}
+                    <h3 className="text-sm sm:text-base font-semibold text-[#FFF4D6] leading-relaxed">
+                      {FINANCIAL_QUIZ_QUESTIONS[quizIndex].question}
+                    </h3>
+
+                    {/* Options list */}
+                    <div className="space-y-2">
+                      {FINANCIAL_QUIZ_QUESTIONS[quizIndex].options.map((option: string, idx: number) => {
+                        const isSelected = selectedOption === idx;
+                        const isCorrectOption = idx === FINANCIAL_QUIZ_QUESTIONS[quizIndex].correctIndex;
+                        let optionStyle = 'bg-[#1B1B1F] border-[#4B515A] text-[#FFF4D6] hover:border-[#FFD95A]';
+
+                        if (isAnswerChecked) {
+                          if (isCorrectOption) {
+                            optionStyle = 'bg-[#2A9D8F]/20 border-[#2A9D8F] text-[#2A9D8F] font-bold';
+                          } else if (isSelected && !isCorrectOption) {
+                            optionStyle = 'bg-[#EE6A5E]/20 border-[#EE6A5E] text-[#EE6A5E] line-through';
+                          }
+                        } else if (isSelected) {
+                          optionStyle = 'bg-[#FFD95A]/15 border-[#FFD95A] text-[#FFD95A] font-semibold';
+                        }
+
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleOptionSelect(idx)}
+                            className={`w-full p-2.5 rounded border text-left text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2.5 ${optionStyle}`}
+                          >
+                            <span className="w-5 h-5 rounded-full border flex items-center justify-center font-bold text-[10px] shrink-0">
+                              {String.fromCharCode(65 + idx)}
+                            </span>
+                            <span>{option}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Explanation Banner */}
+                    {isAnswerChecked && (
                       <div
-                        key={lesson.id}
-                        className={`p-3 border space-y-1.5 ${
-                          isUnlocked ? 'border-[#4B515A] bg-[#2E333B]' : 'border-[#4B515A]/60 bg-[#25282E] opacity-75'
+                        className={`p-3 rounded border text-xs leading-relaxed animate-fadeIn ${
+                          selectedOption === FINANCIAL_QUIZ_QUESTIONS[quizIndex].correctIndex
+                            ? 'bg-[#2A9D8F]/15 border-[#2A9D8F] text-[#FFF4D6]'
+                            : 'bg-[#EE6A5E]/15 border-[#EE6A5E] text-[#FFF4D6]'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="text-[11px] text-[#FFD95A] font-bold uppercase block">
-                              Scroll #{lesson.id} · {lesson.book}
-                            </span>
-                            <strong className="text-xs sm:text-sm text-[#FFF4D6]">
-                              {lesson.title}
-                            </strong>
-                          </div>
-                          <span className="text-base">{isUnlocked ? '📜' : '🔒'}</span>
-                        </div>
-
-                        {isUnlocked ? (
-                          <p className="text-xs sm:text-sm text-[#FFF4D6] opacity-90 leading-relaxed">
-                            &ldquo;{lesson.cardText}&rdquo;
-                          </p>
-                        ) : (
-                          <div className="text-xs text-[#B4BAC4]">
-                            <strong className="text-[#FFD95A] block mb-0.5">How to unlock:</strong>
-                            <p>{lesson.triggerHint}</p>
-                          </div>
-                        )}
+                        <strong className="block text-[#FFD95A] mb-1 font-heading">
+                          {selectedOption === FINANCIAL_QUIZ_QUESTIONS[quizIndex].correctIndex
+                            ? '✓ Correct Insight!'
+                            : '✗ Keep Learning!'}
+                        </strong>
+                        <p>{FINANCIAL_QUIZ_QUESTIONS[quizIndex].explanation}</p>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    )}
 
-              {/* Exactly One Primary Action Button per screen in solid gold */}
-              <div className="pt-2">
-                <Link href="/" className="block">
-                  <PixelButton variant="primary" size="md" fullWidth>
-                    Return to Town Map
-                  </PixelButton>
-                </Link>
+                    {/* Action button */}
+                    <div className="pt-2 flex justify-end">
+                      {!isAnswerChecked ? (
+                        <PixelButton
+                          variant="primary"
+                          disabled={selectedOption === null}
+                          onClick={handleCheckAnswer}
+                        >
+                          Check Answer ⚡
+                        </PixelButton>
+                      ) : (
+                        <PixelButton variant="primary" onClick={handleNextQuestion}>
+                          {quizIndex + 1 < FINANCIAL_QUIZ_QUESTIONS.length
+                            ? 'Next Question ➔'
+                            : 'View Results 🏆'}
+                        </PixelButton>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </StonePanel>
         </WoodFrame>
 

@@ -9,6 +9,7 @@ import { PixelButton } from '@/components/ui/PixelButton';
 import { RpgTextBox } from '@/components/ui/RpgTextBox';
 import { HudBar } from '@/components/ui/HudBar';
 import { BADGE_DEFINITIONS } from '@/lib/constants';
+import { TOWN_DECORATIONS } from '@/lib/gameplay';
 import {
   calculateMonthlySavingsRate,
   calculateWantsShare,
@@ -23,9 +24,10 @@ export default function TownHallPage() {
     avgMonthlyIncome,
     savedMonths,
     insightTips,
+    buyDecoration,
   } = useGame();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'recap'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'recap' | 'builder'>('analytics');
   const [showAllTransactions, setShowAllTransactions] = useState(false);
 
   const today = getTodayISO();
@@ -162,6 +164,17 @@ export default function TownHallPage() {
                 }`}
               >
                 Recap & Badges ({state.badges.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('builder')}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
+                  activeTab === 'builder'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
+                }`}
+              >
+                Town Builder 🏛️ ({state.decorations?.length || 0}/4)
               </button>
             </div>
 
@@ -424,6 +437,109 @@ export default function TownHallPage() {
                 <div className="pt-2">
                   <Link href="/" className="block">
                     <PixelButton variant="primary" size="md" fullWidth>
+                      Return to Town Map
+                    </PixelButton>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Town Builder & Civic Projects */}
+            {activeTab === 'builder' && (
+              <div className="space-y-4 font-sans text-xs sm:text-sm">
+                {/* Renown Header Card */}
+                <div className="p-3 bg-[#1B1B1F] border-2 border-[#B79A60] flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] text-[#B4BAC4] uppercase font-bold tracking-wider block">
+                      Civic Treasury
+                    </span>
+                    <span className="text-sm sm:text-base font-bold font-heading text-[#FFD95A] flex items-center gap-1.5">
+                      <span>⭐</span>
+                      <span>{state.renown ?? 0} Renown</span>
+                    </span>
+                  </div>
+                  <div className="text-right text-[11px] text-[#FFF4D6]/80 max-w-[200px]">
+                    Earn +15 Renown on every transaction, School quiz, and bounty!
+                  </div>
+                </div>
+
+                {/* Description Banner */}
+                <div className="p-2.5 bg-[#25282E] border border-[#4B515A] text-xs text-[#FFF4D6] space-y-1">
+                  <span className="text-[#FFD95A] font-bold block">
+                    🏛️ Civic Architectural Projects
+                  </span>
+                  <p className="text-[#B4BAC4] text-[11px] leading-relaxed">
+                    Build permanent isometric monuments on your island. Every decoration enhances town prestige, makes Sheru happier, and reflects your real-world financial mastery!
+                  </p>
+                </div>
+
+                {/* Decorations List */}
+                <div className="space-y-2.5">
+                  {TOWN_DECORATIONS.map((deco) => {
+                    const isBuilt = state.decorations?.includes(deco.id);
+                    const canAfford = (state.renown ?? 0) >= deco.costRenown;
+
+                    return (
+                      <div
+                        key={deco.id}
+                        className={`p-3 border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                          isBuilt
+                            ? 'border-[#79CE5E]/60 bg-[#1D2A1C]'
+                            : canAfford
+                            ? 'border-[#FFD95A]/60 bg-[#25282E]'
+                            : 'border-[#4B515A]/40 bg-[#1B1B1F] opacity-75'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl p-2 bg-[#121316] border border-[#4B515A] shrink-0">
+                            {deco.icon}
+                          </span>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-heading text-xs sm:text-sm text-[#FFD95A]">
+                                {deco.name}
+                              </span>
+                              {isBuilt && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 bg-[#79CE5E]/20 text-[#79CE5E] border border-[#79CE5E]/60">
+                                  BUILT ✓
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-[#B4BAC4] leading-relaxed">
+                              {deco.desc}
+                            </p>
+                            <span className="text-[10px] text-[#FFD95A] font-mono block">
+                              Cost: ⭐ {deco.costRenown} Renown
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 sm:self-center">
+                          {isBuilt ? (
+                            <span className="text-xs font-bold text-[#79CE5E] flex items-center gap-1">
+                              <span>✓</span> Active in Town
+                            </span>
+                          ) : (
+                            <PixelButton
+                              variant={canAfford ? 'primary' : 'stone'}
+                              size="sm"
+                              disabled={!canAfford}
+                              onClick={() => buyDecoration(deco.id)}
+                            >
+                              {canAfford
+                                ? `Build (${deco.costRenown} ⭐)`
+                                : `Need ${deco.costRenown - (state.renown ?? 0)} ⭐`}
+                            </PixelButton>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2">
+                  <Link href="/" className="block">
+                    <PixelButton variant="wood" size="md" fullWidth>
                       Return to Town Map
                     </PixelButton>
                   </Link>

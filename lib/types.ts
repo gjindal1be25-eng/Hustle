@@ -94,6 +94,12 @@ export interface GameState {
   badges: Badge[];
   lessonsSeen: LessonSeen[];
   meta: Meta;
+  renown?: number;
+  decorations?: string[];
+  petHappiness?: number;
+  lastPettedDate?: string;
+  completedQuests?: string[];
+  resolvedDilemmas?: string[];
 }
 
 export interface LoanSummary {

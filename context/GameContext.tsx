@@ -48,6 +48,7 @@ import { checkLessonTriggers, getLessonById } from '@/lib/lessons';
 import { checkBadgeUnlocks } from '@/lib/badges';
 import { generateDemoState } from '@/lib/demoData';
 import { playCoinSound, playFanfareSound, playWarningSound } from '@/lib/sound';
+import { TOWN_DECORATIONS, TOWN_NPCS, FINANCIAL_DILEMMAS } from '@/lib/gameplay';
 
 export interface ToastMessage {
   id: string;
@@ -84,7 +85,12 @@ type Action =
   | { type: 'UPDATE_LAST_SEEN_LEVEL'; payload: number }
   | { type: 'SET_THEME'; payload: ThemeMode }
   | { type: 'LOAD_DEMO' }
-  | { type: 'RESET_ALL' };
+  | { type: 'RESET_ALL' }
+  | { type: 'ADD_RENOWN'; payload: { amount: number; reason?: string } }
+  | { type: 'BUY_DECORATION'; payload: { id: string; cost: number } }
+  | { type: 'PET_DOG'; payload: { date: string } }
+  | { type: 'COMPLETE_QUEST'; payload: { questId: string; rewardRenown: number } }
+  | { type: 'RESOLVE_DILEMMA'; payload: { dilemmaId: string; renownAdd: number } };
 
 function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -235,6 +241,51 @@ function gameReducer(state: GameState, action: Action): GameState {
     case 'RESET_ALL':
       return INITIAL_STATE;
 
+    case 'ADD_RENOWN':
+      return {
+        ...state,
+        renown: Math.max(0, (state.renown ?? 0) + action.payload.amount),
+      };
+
+    case 'BUY_DECORATION': {
+      const currentDecorations = state.decorations || [];
+      if (currentDecorations.includes(action.payload.id)) return state;
+      const currentRenown = state.renown ?? 0;
+      if (currentRenown < action.payload.cost) return state;
+      return {
+        ...state,
+        renown: currentRenown - action.payload.cost,
+        decorations: [...currentDecorations, action.payload.id],
+      };
+    }
+
+    case 'PET_DOG':
+      return {
+        ...state,
+        petHappiness: Math.min(100, (state.petHappiness ?? 80) + 10),
+        lastPettedDate: action.payload.date,
+      };
+
+    case 'COMPLETE_QUEST': {
+      const quests = state.completedQuests || [];
+      if (quests.includes(action.payload.questId)) return state;
+      return {
+        ...state,
+        completedQuests: [...quests, action.payload.questId],
+        renown: (state.renown ?? 0) + action.payload.rewardRenown,
+      };
+    }
+
+    case 'RESOLVE_DILEMMA': {
+      const resolved = state.resolvedDilemmas || [];
+      if (resolved.includes(action.payload.dilemmaId)) return state;
+      return {
+        ...state,
+        resolvedDilemmas: [...resolved, action.payload.dilemmaId],
+        renown: (state.renown ?? 0) + action.payload.renownAdd,
+      };
+    }
+
     default:
       return state;
   }
@@ -281,6 +332,11 @@ interface GameContextType {
   setCareerPath: (path: CareerPath) => void;
   loadDemo: () => void;
   resetAll: () => void;
+  addRenown: (amount: number, reason?: string) => void;
+  buyDecoration: (id: string) => boolean;
+  petDog: () => void;
+  completeQuest: (questId: string) => void;
+  resolveDilemma: (dilemmaId: string, choiceIndex: number) => void;
   addToast: (title: string, message: string, type?: ToastMessage['type']) => void;
   removeToast: (id: string) => void;
 }
@@ -472,6 +528,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     dispatch({ type: 'ADD_TRANSACTION', payload: newTx });
     playCoinSound();
+    dispatch({ type: 'ADD_RENOWN', payload: { amount: 15, reason: 'Entry Logged' } });
 
     // Reaction & Budget warnings
     const category = state.categories.find((c) => c.id === tx.categoryId);
@@ -651,6 +708,74 @@ export function GameProvider({ children }: { children: ReactNode }) {
     addToast('Demo Loaded', 'Loaded Judge Demo Profile (Level 2 Clerk with ₹35k Salary).', 'success');
   };
 
+  const addRenown = (amount: number, reason?: string) => {
+    dispatch({ type: 'ADD_RENOWN', payload: { amount, reason } });
+    if (amount > 0) {
+      playCoinSound();
+      addToast('Renown Gained! ⭐', `+${amount} Renown${reason ? ` (${reason})` : ''}`, 'success');
+    }
+  };
+
+  const buyDecoration = (id: string): boolean => {
+    const deco = TOWN_DECORATIONS.find((d) => d.id === id);
+    if (!deco) return false;
+    const currentRenown = state.renown ?? 0;
+    if (currentRenown < deco.costRenown) {
+      addToast('Insufficient Renown', `Need ${deco.costRenown} Renown to build ${deco.name}.`, 'warning');
+      return false;
+    }
+    dispatch({ type: 'BUY_DECORATION', payload: { id, cost: deco.costRenown } });
+    playFanfareSound();
+    addToast('Town Landmark Built! 🏛️', `Constructed ${deco.name}! Look for it in town!`, 'success');
+    return true;
+  };
+
+  const petDog = () => {
+    dispatch({ type: 'PET_DOG', payload: { date: today } });
+    playCoinSound();
+    addToast('Sheru is Thrilled! 🐾', 'Sheru wags his tail enthusiastically! (+10 Happiness)', 'success');
+  };
+
+  const completeQuest = (questId: string) => {
+    const npc = TOWN_NPCS.find((n) => n.bounty.id === questId);
+    const reward = npc?.bounty.rewardRenown || 30;
+    dispatch({ type: 'COMPLETE_QUEST', payload: { questId, rewardRenown: reward } });
+    playFanfareSound();
+    addToast('Bounty Completed! 📜', `Claimed +${reward} Renown from ${npc?.name || 'villager'}!`, 'success');
+  };
+
+  const resolveDilemma = (dilemmaId: string, choiceIndex: number) => {
+    const dilemma = FINANCIAL_DILEMMAS.find((d) => d.id === dilemmaId);
+    if (!dilemma) return;
+    const choice = choiceIndex === 0 ? dilemma.optionA : dilemma.optionB;
+    if (choice.cost && choice.cost > 0) {
+      logTransaction({
+        type: 'expense',
+        categoryId: 'cat_bills',
+        amount: choice.cost,
+        date: today,
+        tag: 'need',
+        note: `Dilemma: ${dilemma.title} - ${choice.text}`,
+      });
+    }
+    if (choice.savingsAdd && choice.savingsAdd > 0) {
+      logTransaction({
+        type: 'income',
+        categoryId: 'cat_salary',
+        amount: choice.savingsAdd,
+        date: today,
+        note: `Windfall: ${dilemma.title} - Stashed to savings`,
+      });
+    }
+    dispatch({ type: 'RESOLVE_DILEMMA', payload: { dilemmaId, renownAdd: choice.renownAdd } });
+    if (choice.renownAdd >= 30) {
+      playFanfareSound();
+    } else {
+      playCoinSound();
+    }
+    addToast('Dilemma Resolved! ⚖️', choice.explanation, 'info');
+  };
+
   const resetAll = () => {
     clearGameState();
     dispatch({ type: 'RESET_ALL' });
@@ -698,6 +823,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setCareerPath,
         loadDemo,
         resetAll,
+        addRenown,
+        buyDecoration,
+        petDog,
+        completeQuest,
+        resolveDilemma,
         addToast,
         removeToast,
       }}

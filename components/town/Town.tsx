@@ -15,6 +15,17 @@ import {
   findNearestWalkable,
   findAStarPath,
 } from '@/lib/townGrid';
+import { TOWN_NPCS, FINANCIAL_DILEMMAS, NpcDef, Dilemma } from '@/lib/gameplay';
+import { SheruPet } from './SheruPet';
+import { TownNpcSprite } from './TownNpcSprite';
+import {
+  CrystalFountain,
+  RiversideGazebo,
+  BlossomFlowerbeds,
+  ClocktowerFinial,
+} from './TownDecorations';
+import { NpcDialogueModal } from './NpcDialogueModal';
+import { DilemmaModal } from './DilemmaModal';
 
 interface BuildingDef {
   id: 'work' | 'townhall' | 'vault' | 'home' | 'bank' | 'market' | 'school';
@@ -173,7 +184,11 @@ function generateTownSceneElements(
   isNight: boolean,
   charPos?: Point2D,
   charSpriteNode?: React.ReactNode,
-  dustNodes?: React.ReactNode
+  dustNodes?: React.ReactNode,
+  decorations: string[] = [],
+  npcNodes: { depth: number; node: React.ReactNode }[] = [],
+  petNode?: { depth: number; node: React.ReactNode } | null,
+  idleTick = 0
 ): React.ReactNode[] {
   let tx = 0;
   let ty = 0;
@@ -278,6 +293,20 @@ function generateTownSceneElements(
     G();
     box(x, y, 0, 0.1, 0.1, 1.0, '#6E747E', undefined, `lmp_${x}_${y}`);
     box(x - 0.05, y - 0.05, 1.0, 0.2, 0.2, 0.22, '#FFE27A', undefined, `lmp_g_${x}_${y}`);
+    if (decorations.includes('lanterns')) {
+      const [lx, ly] = P(x + 0.05, y + 0.05, 1.1);
+      elements.push(
+        <circle
+          key={`lmp_glow_${x}_${y}`}
+          cx={lx}
+          cy={ly}
+          r="16"
+          fill="#FFD95A"
+          opacity={isNight ? 0.4 : 0.22}
+          className="pointer-events-none"
+        />
+      );
+    }
   }
 
   function fence(x0: number, x1: number, y: number) {
@@ -629,6 +658,30 @@ function generateTownSceneElements(
   items.push([11.8, () => bush(7.3, 4.8)]);
   items.push([12.2, () => lamp(6.9, 5.9)]);
 
+  // Town Decorations
+  if (decorations.includes('fountain')) {
+    items.push([10.3, () => elements.push(<CrystalFountain key="dec-fountain" idleTick={idleTick} />)]);
+  }
+  if (decorations.includes('gazebo')) {
+    items.push([18.0, () => elements.push(<RiversideGazebo key="dec-gazebo" />)]);
+  }
+  if (decorations.includes('flowerbeds')) {
+    items.push([9.5, () => elements.push(<BlossomFlowerbeds key="dec-flowers" />)]);
+  }
+  if (decorations.includes('clocktower')) {
+    items.push([11.0, () => elements.push(<ClocktowerFinial key="dec-clock" />)]);
+  }
+
+  // NPC Sprites
+  for (const n of npcNodes) {
+    items.push([n.depth, () => elements.push(n.node)]);
+  }
+
+  // Pet Sheru
+  if (petNode) {
+    items.push([petNode.depth, () => elements.push(petNode.node)]);
+  }
+
   // Front lawn scenery (orchard trees, gate lamps, fences)
   items.push([11.5, () => tree(1.2, 10.3)]);
   items.push([12.9, () => tree(2.3, 10.6)]);
@@ -658,7 +711,17 @@ function generateTownSceneElements(
 
 export function Town() {
   const router = useRouter();
-  const { state, level, activeEvent } = useGame();
+  const {
+    state,
+    level,
+    activeEvent,
+    balance,
+    netSavings,
+    avgMonthlyIncome,
+    petDog,
+    completeQuest,
+    resolveDilemma,
+  } = useGame();
 
   // Character movement state (continuous sub-grid units on the plaza road)
   const [charPos, setCharPos] = useState<Point2D>({ x: 5.3, y: 6.0 });
@@ -671,6 +734,11 @@ export function Town() {
   const [idleTick, setIdleTick] = useState(0);
   const [clickTarget, setClickTarget] = useState<Point2D | null>(null);
   const [showControls, setShowControls] = useState(true);
+
+  // RPG Pillar state: dialogue modals & dilemmas
+  const [selectedNpc, setSelectedNpc] = useState<NpcDef | null>(null);
+  const [activeDilemma, setActiveDilemma] = useState<Dilemma | null>(null);
+  const [, setSheruPettedAnim] = useState(false);
 
   const charPosRef = useRef<Point2D>({ x: 5.3, y: 6.0 });
   const walkPathRef = useRef<Point2D[]>([]);
@@ -713,6 +781,81 @@ export function Town() {
   }, [charPos.x, charPos.y]);
 
   const thoughtBubble = nearbyBuilding ? BUILDING_EMOTES[nearbyBuilding] : null;
+
+  // Proximity to nearest NPC
+  const nearestNpc = useMemo(() => {
+    for (const npc of TOWN_NPCS) {
+      const dist = Math.hypot(charPos.x - npc.x, charPos.y - npc.y);
+      if (dist <= 1.4) {
+        return npc;
+      }
+    }
+    return null;
+  }, [charPos.x, charPos.y]);
+
+  // Pet Sheru position & proximity
+  const petPos = useMemo(() => {
+    const isGoodSavings = avgMonthlyIncome > 0 ? netSavings / avgMonthlyIncome >= 0.2 : balance > 0;
+    if (isGoodSavings) {
+      // Sheru loyally trots behind player when saving well
+      return { x: charPos.x - 0.45, y: charPos.y + 0.35 };
+    }
+    // Otherwise Sheru hangs out near the town well/fountain
+    return { x: 5.8, y: 5.4 };
+  }, [charPos.x, charPos.y, avgMonthlyIncome, netSavings, balance]);
+
+  const isNearSheru = useMemo(() => {
+    return Math.hypot(charPos.x - petPos.x, charPos.y - petPos.y) < 1.4;
+  }, [charPos.x, charPos.y, petPos.x, petPos.y]);
+
+  // Unresolved dilemma trigger check
+  const pendingDilemma = useMemo(() => {
+    const resolved = state.resolvedDilemmas || [];
+    return FINANCIAL_DILEMMAS.find((d) => !resolved.includes(d.id)) || null;
+  }, [state.resolvedDilemmas]);
+
+  // Town NPC Sprites
+  const npcNodes = useMemo(() => {
+    return TOWN_NPCS.map((npc) => {
+      const isNear = nearestNpc?.id === npc.id;
+      return {
+        depth: npc.x + npc.y,
+        node: (
+          <TownNpcSprite
+            key={`town-npc-${npc.id}`}
+            npc={npc}
+            isNearby={isNear}
+            onTalk={(n) => {
+              setSelectedNpc(n);
+              playButtonSound();
+            }}
+            idleTick={idleTick}
+          />
+        ),
+      };
+    });
+  }, [nearestNpc, idleTick]);
+
+  // Sheru Pet Node
+  const petNode = useMemo(() => {
+    return {
+      depth: petPos.x + petPos.y,
+      node: (
+        <SheruPet
+          key="sheru-pet"
+          x={petPos.x}
+          y={petPos.y}
+          happiness={state.petHappiness ?? 80}
+          onPet={() => {
+            petDog();
+            setSheruPettedAnim(true);
+            setTimeout(() => setSheruPettedAnim(false), 2000);
+          }}
+          idleTick={idleTick}
+        />
+      ),
+    };
+  }, [petPos.x, petPos.y, state.petHappiness, petDog, idleTick]);
 
   // Character figure matching customized avatar appearance, animations, juice, and direction
   const charSpriteNode = useMemo(
@@ -784,9 +927,23 @@ export function Town() {
         isNight,
         charPos,
         charSpriteNode,
-        dustNodes
+        dustNodes,
+        state.decorations || [],
+        npcNodes,
+        petNode,
+        idleTick
       ),
-    [extraH, isNight, charPos, charSpriteNode, dustNodes]
+    [
+      extraH,
+      isNight,
+      charPos,
+      charSpriteNode,
+      dustNodes,
+      state.decorations,
+      npcNodes,
+      petNode,
+      idleTick,
+    ]
   );
 
   // Click a building: step directly into the doorway, then open menu
@@ -844,8 +1001,19 @@ export function Town() {
         walkPathRef.current = [];
         setClickTarget(null);
         activeKeysRef.current.add(keyLower);
-      } else if (e.key === 'Enter' || e.key === ' ') {
+      } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
+        if (isNearSheru) {
+          petDog();
+          setSheruPettedAnim(true);
+          setTimeout(() => setSheruPettedAnim(false), 2000);
+          return;
+        }
+        if (nearestNpc) {
+          setSelectedNpc(nearestNpc);
+          playButtonSound();
+          return;
+        }
         const curr = charPosRef.current;
         const b = BUILDINGS.find((bld) => {
           const sp = STAND_POINTS[bld.id];
@@ -856,6 +1024,16 @@ export function Town() {
           setIsEntering(true);
           isNavigatingRef.current = true;
           setTimeout(() => router.push(b.route), 140);
+        }
+      } else if (keyLower === 'e') {
+        e.preventDefault();
+        if (nearestNpc) {
+          setSelectedNpc(nearestNpc);
+          playButtonSound();
+        } else if (isNearSheru) {
+          petDog();
+          setSheruPettedAnim(true);
+          setTimeout(() => setSheruPettedAnim(false), 2000);
         }
       }
     };
@@ -878,7 +1056,7 @@ export function Town() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [router]);
+  }, [router, nearestNpc, isNearSheru, petDog]);
 
   // Continuous game loop with inertia, corner sliding, doorway funnel, SFX, and dust
   useEffect(() => {
@@ -1276,8 +1454,68 @@ export function Town() {
         })}
       </svg>
 
-      {/* Floating Doorway Action Banner: Prominently displayed when near any building */}
-      {nearbyBuilding && !isEntering && (
+      {/* Top Right HUD: Renown, Sheru Happiness, and Life Dilemma Alert */}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 sm:gap-2 select-none">
+        {pendingDilemma && (
+          <button
+            type="button"
+            onClick={() => {
+              setActiveDilemma(pendingDilemma);
+              playButtonSound();
+            }}
+            className="px-2.5 py-1 bg-[#EE6A5E] hover:bg-[#D9534F] text-[#FFF4D6] border-2 border-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_3px_0_#000] cursor-pointer animate-pulse flex items-center gap-1 transition-transform active:translate-y-0.5"
+            title="A random financial life dilemma has occurred!"
+          >
+            <span>⚡</span>
+            <span className="hidden sm:inline">Dilemma!</span>
+          </button>
+        )}
+        <div
+          className="px-2 py-1 bg-[#1B1B1F]/90 border border-[#B79A60] text-[#FFD95A] font-heading text-[10px] sm:text-xs flex items-center gap-1.5 shadow"
+          title="Town Renown (Earned from budgeting, bounties & quizzes)"
+        >
+          <span>⭐</span>
+          <span>{state.renown ?? 0}</span>
+          <span className="text-[#8E929A] text-[9px] hidden sm:inline">RENOWN</span>
+        </div>
+        <div
+          className="px-2 py-1 bg-[#1B1B1F]/90 border border-[#B79A60] text-[#FFF4D6] font-heading text-[10px] sm:text-xs flex items-center gap-1 shadow"
+          title="Sheru's Happiness (Pet him daily!)"
+        >
+          <span>🐕</span>
+          <span>{state.petHappiness ?? 80}%</span>
+        </div>
+      </div>
+
+      {/* Floating Action Banners: Dynamic for NPCs, Sheru Pet, and Doorways */}
+      {nearestNpc && !isEntering ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedNpc(nearestNpc);
+            playButtonSound();
+          }}
+          className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2 animate-bounce"
+        >
+          <span>💬</span>
+          <span>Talk to {nearestNpc.name} (Press E or SPACE)</span>
+          <span>➔</span>
+        </button>
+      ) : isNearSheru && !isEntering ? (
+        <button
+          type="button"
+          onClick={() => {
+            petDog();
+            setSheruPettedAnim(true);
+            setTimeout(() => setSheruPettedAnim(false), 2000);
+          }}
+          className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2 animate-bounce"
+        >
+          <span>🐾</span>
+          <span>Pet Sheru (+Happiness! Press SPACE or E)</span>
+          <span>❤️</span>
+        </button>
+      ) : nearbyBuilding && !isEntering ? (
         <button
           type="button"
           onClick={() => {
@@ -1295,7 +1533,7 @@ export function Town() {
           <span>Enter {BUILDINGS.find((b) => b.id === nearbyBuilding)?.name} (Press SPACE/ENTER)</span>
           <span>➔</span>
         </button>
-      )}
+      ) : null}
 
       {/* On-Screen Mobile / Touch Virtual Controls */}
       <div className="absolute bottom-12 right-2 flex flex-col items-end gap-1 z-20 select-none">
@@ -1342,6 +1580,17 @@ export function Town() {
               <button
                 type="button"
                 onClick={() => {
+                  if (isNearSheru) {
+                    petDog();
+                    setSheruPettedAnim(true);
+                    setTimeout(() => setSheruPettedAnim(false), 2000);
+                    return;
+                  }
+                  if (nearestNpc) {
+                    setSelectedNpc(nearestNpc);
+                    playButtonSound();
+                    return;
+                  }
                   const curr = charPosRef.current;
                   const b = BUILDINGS.find((bld) => {
                     const sp = STAND_POINTS[bld.id];
@@ -1354,15 +1603,23 @@ export function Town() {
                     setTimeout(() => router.push(b.route), 140);
                   }
                 }}
-                className={`w-8 h-8 border font-heading text-[10px] flex items-center justify-center cursor-pointer shadow-sm select-none transition-colors ${
-                  nearbyBuilding
+                className={`w-8 h-8 border font-heading text-[9px] flex items-center justify-center cursor-pointer shadow-sm select-none transition-colors ${
+                  isNearSheru || nearestNpc || nearbyBuilding
                     ? 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold'
                     : 'bg-[#3A3F47] text-[#B4BAC4] border-[#4E5561]'
                 }`}
-                title={nearbyBuilding ? 'Enter building' : 'Action'}
+                title={
+                  isNearSheru
+                    ? 'Pet Sheru'
+                    : nearestNpc
+                    ? `Talk to ${nearestNpc.name}`
+                    : nearbyBuilding
+                    ? 'Enter building'
+                    : 'Action'
+                }
                 aria-label="Action / Enter"
               >
-                {nearbyBuilding ? 'IN' : 'OK'}
+                {isNearSheru ? 'PET' : nearestNpc ? 'TALK' : nearbyBuilding ? 'IN' : 'OK'}
               </button>
 
               <button
@@ -1426,6 +1683,30 @@ export function Town() {
           </button>
         ))}
       </div>
+
+      {/* NPC Dialogue & Bounty Modal */}
+      {selectedNpc && (
+        <NpcDialogueModal
+          npc={selectedNpc}
+          isQuestCompleted={state.completedQuests?.includes(selectedNpc.bounty.id) ?? false}
+          onClose={() => setSelectedNpc(null)}
+          onCompleteQuest={(questId) => {
+            completeQuest(questId);
+          }}
+        />
+      )}
+
+      {/* Random Life Dilemma Choice Modal */}
+      {activeDilemma && (
+        <DilemmaModal
+          dilemma={activeDilemma}
+          onClose={() => setActiveDilemma(null)}
+          onChoose={(choiceIndex) => {
+            resolveDilemma(activeDilemma.id, choiceIndex);
+            setActiveDilemma(null);
+          }}
+        />
+      )}
     </div>
   );
 }
