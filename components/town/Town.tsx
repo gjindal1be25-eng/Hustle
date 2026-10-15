@@ -1352,6 +1352,12 @@ export function Town() {
           const tagW = Math.round(b.name.length * 6.6 + 14);
           const isHovered = hoveredBuilding === b.id;
 
+          // Only show labels when player character is up close to the building entrance or hovering
+          const sp = STAND_POINTS[b.id];
+          const distToChar = sp ? Math.hypot(charPos.x - sp.x, charPos.y - sp.y) : 999;
+          const isUpClose = distToChar <= 2.2;
+          const showLabel = isUpClose || isHovered;
+
           let liveBadge: string | null = null;
           if (b.id === 'market') {
             const hasOver = state.categories.some((c) => {
@@ -1397,9 +1403,9 @@ export function Town() {
                 fill="transparent"
               />
 
-              {/* Live Badge floating directly above the Name Tag on the roof */}
-              {liveBadge && (
-                <g transform={`translate(${rx}, ${ry - 30})`}>
+              {/* Live Badge floating directly above the Name Tag on the roof - only up close or on hover */}
+              {showLabel && liveBadge && (
+                <g transform={`translate(${rx}, ${ry - 30})`} className="pointer-events-none select-none animate-fadeIn">
                   <rect
                     x="-24"
                     y="-9"
@@ -1424,31 +1430,33 @@ export function Town() {
                 </g>
               )}
 
-              {/* Name Tag: ON TOP OF BUILDING (Roof Apex) */}
-              <g transform={`translate(${rx}, ${ry - 10})`}>
-                <rect
-                  x={-tagW / 2}
-                  y="-8"
-                  width={tagW}
-                  height="17"
-                  rx="3"
-                  fill={isHovered ? '#FFD95A' : '#FFF6E0'}
-                  opacity={isHovered ? 1.0 : 0.94}
-                  stroke={isHovered ? '#B38B00' : '#8A5A2B'}
-                  strokeWidth={isHovered ? 2 : 1.2}
-                />
-                <text
-                  x="0"
-                  y="4"
-                  textAnchor="middle"
-                  fontFamily="var(--font-body), monospace, sans-serif"
-                  fontSize="11"
-                  fontWeight="bold"
-                  fill={isHovered ? '#1B1B1F' : '#2B3440'}
-                >
-                  {b.name}
-                </text>
-              </g>
+              {/* Name Tag: ON TOP OF BUILDING (Roof Apex) - only up close or on hover */}
+              {showLabel && (
+                <g transform={`translate(${rx}, ${ry - 10})`} className="pointer-events-none select-none animate-fadeIn">
+                  <rect
+                    x={-tagW / 2}
+                    y="-8"
+                    width={tagW}
+                    height="17"
+                    rx="3"
+                    fill={isHovered ? '#FFD95A' : '#FFF6E0'}
+                    opacity={isHovered ? 1.0 : 0.94}
+                    stroke={isHovered ? '#B38B00' : '#8A5A2B'}
+                    strokeWidth={isHovered ? 2 : 1.2}
+                  />
+                  <text
+                    x="0"
+                    y="4"
+                    textAnchor="middle"
+                    fontFamily="var(--font-body), monospace, sans-serif"
+                    fontSize="11"
+                    fontWeight="bold"
+                    fill={isHovered ? '#1B1B1F' : '#2B3440'}
+                  >
+                    {b.name}
+                  </text>
+                </g>
+              )}
             </g>
           );
         })}

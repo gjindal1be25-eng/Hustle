@@ -33,11 +33,11 @@ export function TownNpcSprite({
       {/* Ground Shadow */}
       <ellipse cx="0" cy="2" rx="9" ry="4.5" fill="#1B1B1F" opacity="0.38" />
 
-      {/* Floating Talk Indicator if player is nearby or on hover */}
+      {/* Floating Talk Indicator - only visible when player is nearby or on hover */}
       <g
         transform={`translate(0, ${-46 + Math.sin(idleTick * 3) * 2})`}
         className={`transition-all duration-200 pointer-events-none select-none ${
-          isNearby ? 'opacity-100 scale-105' : 'opacity-85 group-hover:opacity-100'
+          isNearby ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100'
         }`}
       >
         <rect
