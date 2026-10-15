@@ -11,6 +11,9 @@ import {
   getBuildingAtDoor,
   STAND_POINTS,
   Point2D,
+  screenToWorld,
+  findNearestWalkable,
+  findAStarPath,
 } from '@/lib/townGrid';
 
 interface BuildingDef {
@@ -666,8 +669,11 @@ export function Town() {
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [dustParticles, setDustParticles] = useState<DustParticle[]>([]);
   const [idleTick, setIdleTick] = useState(0);
+  const [clickTarget, setClickTarget] = useState<Point2D | null>(null);
+  const [showControls, setShowControls] = useState(true);
 
   const charPosRef = useRef<Point2D>({ x: 5.3, y: 6.0 });
+  const walkPathRef = useRef<Point2D[]>([]);
   const velocityRef = useRef<{ vx: number; vy: number }>({ vx: 0, vy: 0 });
   const activeKeysRef = useRef<Set<string>>(new Set());
   const strideAccumRef = useRef<number>(0);
@@ -790,12 +796,30 @@ export function Town() {
     const sp = STAND_POINTS[bDef.id];
     setCharPos(sp);
     charPosRef.current = sp;
+    walkPathRef.current = [];
+    setClickTarget(null);
     setIsEntering(true);
     playButtonSound();
     isNavigatingRef.current = true;
     setTimeout(() => {
       router.push(bDef.route);
     }, 140);
+  };
+
+  // Click anywhere on town map to walk to that spot
+  const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (isNavigatingRef.current) return;
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const px = -10 + ((e.clientX - rect.left) / rect.width) * 710;
+    const py = 0 + ((e.clientY - rect.top) / rect.height) * 530;
+    const worldPt = screenToWorld(px, py);
+    const target = findNearestWalkable(worldPt.x, worldPt.y);
+    const path = findAStarPath(charPosRef.current.x, charPosRef.current.y, target.x, target.y);
+    if (path.length > 1) {
+      walkPathRef.current = path.slice(1);
+      setClickTarget(target);
+    }
   };
 
   // Keyboard input listeners: track active keys and quick enter interaction
@@ -817,6 +841,8 @@ export function Town() {
         )
       ) {
         e.preventDefault();
+        walkPathRef.current = [];
+        setClickTarget(null);
         activeKeysRef.current.add(keyLower);
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -866,28 +892,52 @@ export function Town() {
       lastTime = time;
 
       if (!isNavigatingRef.current) {
-        // 1. Calculate target velocity from active keys
+        // 1. Calculate target velocity from active keys or click-to-walk path
         const keys = activeKeysRef.current;
         let targetVx = 0;
         let targetVy = 0;
 
-        if (keys.has('arrowup') || keys.has('w')) {
-          targetVy -= 1;
-        }
-        if (keys.has('arrowdown') || keys.has('s')) {
-          targetVy += 1;
-        }
-        if (keys.has('arrowleft') || keys.has('a')) {
-          targetVx -= 1;
-        }
-        if (keys.has('arrowright') || keys.has('d')) {
-          targetVx += 1;
-        }
+        if (keys.size > 0) {
+          walkPathRef.current = [];
+          setClickTarget(null);
 
-        // Normalize diagonal vector
-        if (targetVx !== 0 && targetVy !== 0) {
-          targetVx *= Math.SQRT1_2;
-          targetVy *= Math.SQRT1_2;
+          if (keys.has('arrowup') || keys.has('w')) {
+            targetVy -= 1;
+          }
+          if (keys.has('arrowdown') || keys.has('s')) {
+            targetVy += 1;
+          }
+          if (keys.has('arrowleft') || keys.has('a')) {
+            targetVx -= 1;
+          }
+          if (keys.has('arrowright') || keys.has('d')) {
+            targetVx += 1;
+          }
+
+          // Normalize diagonal vector
+          if (targetVx !== 0 && targetVy !== 0) {
+            targetVx *= Math.SQRT1_2;
+            targetVy *= Math.SQRT1_2;
+          }
+        } else if (walkPathRef.current.length > 0) {
+          const curr = charPosRef.current;
+          while (walkPathRef.current.length > 0) {
+            const nextWp = walkPathRef.current[0];
+            const wpDx = nextWp.x - curr.x;
+            const wpDy = nextWp.y - curr.y;
+            const wpDist = Math.hypot(wpDx, wpDy);
+
+            if (wpDist < 0.18) {
+              walkPathRef.current.shift();
+            } else {
+              targetVx = wpDx / wpDist;
+              targetVy = wpDy / wpDist;
+              break;
+            }
+          }
+          if (walkPathRef.current.length === 0) {
+            setClickTarget(null);
+          }
         }
 
         // 2. Velocity lerping (inertia / smooth acceleration & deceleration)
@@ -1047,7 +1097,8 @@ export function Town() {
         id="town-canvas"
         viewBox="-10 0 700 530"
         role="img"
-        className="w-full h-auto block cursor-default"
+        onClick={handleSvgClick}
+        className="w-full h-auto block cursor-pointer"
         style={{ display: 'block' }}
       >
         <title>Hustle Floating Island RPG Town</title>
@@ -1093,6 +1144,27 @@ export function Town() {
 
         {/* 3D Isometric Polygons Render with depth-sorted character figure */}
         <g id="scene-elements">{elements}</g>
+
+        {/* Destination Click Ping Beacon */}
+        {clickTarget && (
+          <g
+            id="click-target-beacon"
+            transform={`translate(${projectIso(clickTarget.x, clickTarget.y, 0)[0]}, ${projectIso(clickTarget.x, clickTarget.y, 0)[1]})`}
+            className="pointer-events-none"
+          >
+            <ellipse
+              cx="0"
+              cy="0"
+              rx="12"
+              ry="6"
+              fill="none"
+              stroke="#FFD95A"
+              strokeWidth="2"
+              opacity="0.85"
+            />
+            <ellipse cx="0" cy="0" rx="4" ry="2" fill="#FFD95A" opacity="0.9" />
+          </g>
+        )}
 
         {/* Building Click Hitspots, Live Badges & Highlighted Name Tags */}
         {BUILDINGS.map((b) => {
@@ -1204,9 +1276,129 @@ export function Town() {
         })}
       </svg>
 
+      {/* Floating Doorway Action Banner: Prominently displayed when near any building */}
+      {nearbyBuilding && !isEntering && (
+        <button
+          type="button"
+          onClick={() => {
+            const b = BUILDINGS.find((bld) => bld.id === nearbyBuilding);
+            if (b && !isNavigatingRef.current) {
+              playButtonSound();
+              setIsEntering(true);
+              isNavigatingRef.current = true;
+              setTimeout(() => router.push(b.route), 140);
+            }
+          }}
+          className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2 animate-bounce"
+        >
+          <span>🚪</span>
+          <span>Enter {BUILDINGS.find((b) => b.id === nearbyBuilding)?.name} (Press SPACE/ENTER)</span>
+          <span>➔</span>
+        </button>
+      )}
+
+      {/* On-Screen Mobile / Touch Virtual Controls */}
+      <div className="absolute bottom-12 right-2 flex flex-col items-end gap-1 z-20 select-none">
+        <button
+          type="button"
+          onClick={() => setShowControls(!showControls)}
+          className="text-[9px] font-heading px-2 py-0.5 bg-[#1B1B1F]/85 text-[#FFD95A] border border-[#4E5561] hover:border-[#FFD95A] cursor-pointer shadow"
+          title="Toggle on-screen controls"
+        >
+          {showControls ? '🎮 HIDE D-PAD' : '🎮 D-PAD'}
+        </button>
+
+        {showControls && (
+          <div className="bg-[#121316]/90 border-2 border-[#5C3826] p-1 shadow-[0_4px_0_#000] backdrop-blur-xs flex flex-col items-center gap-1">
+            {/* Up */}
+            <button
+              type="button"
+              onMouseDown={() => activeKeysRef.current.add('w')}
+              onMouseUp={() => activeKeysRef.current.delete('w')}
+              onMouseLeave={() => activeKeysRef.current.delete('w')}
+              onTouchStart={(e) => { e.preventDefault(); activeKeysRef.current.add('w'); }}
+              onTouchEnd={() => activeKeysRef.current.delete('w')}
+              className="w-8 h-8 bg-[#2E333B] active:bg-[#FFD95A] active:text-[#1B1B1F] border border-[#4E5561] text-[#FFF4D6] font-heading text-xs flex items-center justify-center cursor-pointer shadow-sm select-none"
+              aria-label="Move Up"
+            >
+              ▲
+            </button>
+
+            {/* Middle: Left, Action/Enter, Right */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onMouseDown={() => activeKeysRef.current.add('a')}
+                onMouseUp={() => activeKeysRef.current.delete('a')}
+                onMouseLeave={() => activeKeysRef.current.delete('a')}
+                onTouchStart={(e) => { e.preventDefault(); activeKeysRef.current.add('a'); }}
+                onTouchEnd={() => activeKeysRef.current.delete('a')}
+                className="w-8 h-8 bg-[#2E333B] active:bg-[#FFD95A] active:text-[#1B1B1F] border border-[#4E5561] text-[#FFF4D6] font-heading text-xs flex items-center justify-center cursor-pointer shadow-sm select-none"
+                aria-label="Move Left"
+              >
+                ◀
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const curr = charPosRef.current;
+                  const b = BUILDINGS.find((bld) => {
+                    const sp = STAND_POINTS[bld.id];
+                    return Math.hypot(curr.x - sp.x, curr.y - sp.y) < 1.35;
+                  });
+                  if (b && !isNavigatingRef.current) {
+                    playButtonSound();
+                    setIsEntering(true);
+                    isNavigatingRef.current = true;
+                    setTimeout(() => router.push(b.route), 140);
+                  }
+                }}
+                className={`w-8 h-8 border font-heading text-[10px] flex items-center justify-center cursor-pointer shadow-sm select-none transition-colors ${
+                  nearbyBuilding
+                    ? 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold'
+                    : 'bg-[#3A3F47] text-[#B4BAC4] border-[#4E5561]'
+                }`}
+                title={nearbyBuilding ? 'Enter building' : 'Action'}
+                aria-label="Action / Enter"
+              >
+                {nearbyBuilding ? 'IN' : 'OK'}
+              </button>
+
+              <button
+                type="button"
+                onMouseDown={() => activeKeysRef.current.add('d')}
+                onMouseUp={() => activeKeysRef.current.delete('d')}
+                onMouseLeave={() => activeKeysRef.current.delete('d')}
+                onTouchStart={(e) => { e.preventDefault(); activeKeysRef.current.add('d'); }}
+                onTouchEnd={() => activeKeysRef.current.delete('d')}
+                className="w-8 h-8 bg-[#2E333B] active:bg-[#FFD95A] active:text-[#1B1B1F] border border-[#4E5561] text-[#FFF4D6] font-heading text-xs flex items-center justify-center cursor-pointer shadow-sm select-none"
+                aria-label="Move Right"
+              >
+                ▶
+              </button>
+            </div>
+
+            {/* Down */}
+            <button
+              type="button"
+              onMouseDown={() => activeKeysRef.current.add('s')}
+              onMouseUp={() => activeKeysRef.current.delete('s')}
+              onMouseLeave={() => activeKeysRef.current.delete('s')}
+              onTouchStart={(e) => { e.preventDefault(); activeKeysRef.current.add('s'); }}
+              onTouchEnd={() => activeKeysRef.current.delete('s')}
+              className="w-8 h-8 bg-[#2E333B] active:bg-[#FFD95A] active:text-[#1B1B1F] border border-[#4E5561] text-[#FFF4D6] font-heading text-xs flex items-center justify-center cursor-pointer shadow-sm select-none"
+              aria-label="Move Down"
+            >
+              ▼
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Hover Floating Guide Strip */}
       {hoveredBuilding && (
-        <div className="absolute bottom-2 left-2 right-2 bg-[#1B1B1F]/90 border border-[#FFD95A] px-3 py-1.5 flex items-center justify-between text-xs text-[#FFF4D6] font-body pointer-events-none animate-fadeIn">
+        <div className="absolute bottom-12 left-2 right-2 bg-[#1B1B1F]/90 border border-[#FFD95A] px-3 py-1.5 flex items-center justify-between text-xs text-[#FFF4D6] font-body pointer-events-none animate-fadeIn z-15">
           <span className="font-heading text-[#FFD95A] text-[10px] uppercase">
             {BUILDINGS.find((b) => b.id === hoveredBuilding)?.name}
           </span>
@@ -1215,6 +1407,25 @@ export function Town() {
           </span>
         </div>
       )}
+
+      {/* Quick Fast-Travel Town Strip */}
+      <div className="w-full bg-[#15161A] border-t-2 border-[#3B2516] p-2 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 z-10">
+        <span className="text-[10px] font-heading text-[#B4BAC4] uppercase mr-1 hidden sm:inline">
+          Fast Travel:
+        </span>
+        {BUILDINGS.map((b) => (
+          <button
+            key={b.id}
+            type="button"
+            onClick={(e) => handleBuildingClick(e, b)}
+            className="px-2 py-1 bg-[#25282E] hover:bg-[#FFD95A] hover:text-[#1B1B1F] text-[#FFF4D6] border border-[#4E5561] hover:border-[#FFD95A] text-[10px] sm:text-xs font-heading cursor-pointer transition-colors flex items-center gap-1 shadow-xs"
+            title={b.desc}
+          >
+            <span>{BUILDING_EMOTES[b.id]?.icon}</span>
+            <span>{b.name}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
