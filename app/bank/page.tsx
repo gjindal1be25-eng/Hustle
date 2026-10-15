@@ -83,7 +83,7 @@ export default function BankPage() {
             {activeTab === 'simulator' && (
               <div className="space-y-4 font-sans text-xs sm:text-sm">
                 {/* 3-Field Single Row / Column Form with balanced labels and aligned inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
                   <PixelInput
                     label="Principal (₹)"
                     prefix="₹"
@@ -117,30 +117,30 @@ export default function BankPage() {
                   />
                 </div>
 
-                {/* 4-Metric Result Strip matching retro pixel theme */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
-                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
-                    <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Monthly EMI</span>
-                    <strong className="text-base sm:text-lg font-heading text-[#FFD95A] block mt-1">
+                {/* 4-Metric Result Strip matching retro pixel theme with crisp tabular alignment */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center font-body">
+                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)] flex flex-col justify-between">
+                    <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">Monthly EMI</span>
+                    <strong className="text-base sm:text-lg font-bold text-[#FFD95A] block mt-1 tabular-nums">
                       ₹{simSummary.emi.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
-                    <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Total Interest</span>
-                    <strong className="text-base sm:text-lg font-heading text-[#EE6A5E] block mt-1">
+                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)] flex flex-col justify-between">
+                    <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">Total Interest</span>
+                    <strong className="text-base sm:text-lg font-bold text-[#EE6A5E] block mt-1 tabular-nums">
                       ₹{simSummary.totalInterest.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
-                    <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Total Payable</span>
-                    <strong className="text-base sm:text-lg font-heading text-[#FFF4D6] block mt-1">
+                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)] flex flex-col justify-between">
+                    <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">Total Payable</span>
+                    <strong className="text-base sm:text-lg font-bold text-[#FFF4D6] block mt-1 tabular-nums">
                       ₹{simSummary.totalPayable.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
-                    <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">EMI-to-Income</span>
+                  <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)] flex flex-col justify-between">
+                    <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">EMI-to-Income</span>
                     <strong
-                      className={`text-base sm:text-lg font-heading block mt-1 ${
+                      className={`text-base sm:text-lg font-bold block mt-1 tabular-nums ${
                         isHighRisk ? 'text-[#EE6A5E]' : 'text-[#79CE5E]'
                       }`}
                     >
@@ -209,28 +209,28 @@ export default function BankPage() {
               <div className="space-y-4 font-sans text-xs sm:text-sm">
                 {activeLoan ? (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
-                        <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Principal</span>
-                        <strong className="text-base sm:text-lg font-heading text-[#FFF4D6] block mt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-body">
+                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)] flex flex-col justify-between">
+                        <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">Principal</span>
+                        <strong className="text-base sm:text-lg font-bold text-[#FFF4D6] block mt-1 tabular-nums">
                           ₹{activeLoan.principal.toLocaleString('en-IN')}
                         </strong>
                       </div>
-                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
-                        <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Rate</span>
-                        <strong className="text-base sm:text-lg font-heading text-[#FFD95A] block mt-1">
+                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)] flex flex-col justify-between">
+                        <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">Rate</span>
+                        <strong className="text-base sm:text-lg font-bold text-[#FFD95A] block mt-1 tabular-nums">
                           {activeLoan.annualRatePct}% p.a.
                         </strong>
                       </div>
-                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
-                        <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">Monthly EMI</span>
-                        <strong className="text-base sm:text-lg font-heading text-[#EE6A5E] block mt-1">
+                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)] flex flex-col justify-between">
+                        <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">Monthly EMI</span>
+                        <strong className="text-base sm:text-lg font-bold text-[#EE6A5E] block mt-1 tabular-nums">
                           ₹{calculateEMI(activeLoan.principal, activeLoan.annualRatePct, activeLoan.months).toLocaleString('en-IN')}
                         </strong>
                       </div>
-                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)]">
-                        <span className="text-[11px] font-heading text-[#B4BAC4] block uppercase">EMIs Paid</span>
-                        <strong className="text-base sm:text-lg font-heading text-[#79CE5E] block mt-1">
+                      <div className="p-2.5 sm:p-3 bg-[#2E333B] border border-[#4B515A] shadow-[inset_1px_1px_0_rgba(0,0,0,0.3)] flex flex-col justify-between">
+                        <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">EMIs Paid</span>
+                        <strong className="text-base sm:text-lg font-bold text-[#79CE5E] block mt-1 tabular-nums">
                           {emisPaidCount} / {activeLoan.months}
                         </strong>
                       </div>

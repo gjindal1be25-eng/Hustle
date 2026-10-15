@@ -67,7 +67,7 @@ export function HudBar() {
         <div className="flex items-center gap-1.5 bg-[#25282E] px-2.5 py-0.5 border border-[#4E5561] min-w-[100px] justify-center flex-shrink-0">
           <CoinIcon size={16} />
           <span
-            className={`font-heading text-xs sm:text-sm ${
+            className={`font-body font-bold text-xs sm:text-sm tabular-nums ${
               balance < 0 ? 'text-[#EE6A5E]' : 'text-[#FFF4D6]'
             }`}
           >

@@ -35,11 +35,11 @@ export function WoodFrame({
 
         {/* Header Bar */}
         {(title || showBackToTown) && (
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b-2 border-[#5C3826]">
+          <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3 mb-4 pb-3 border-b-2 border-[#5C3826]">
             {showBackToTown ? (
               <Link
                 href={backHref}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-heading text-[#FFF4D6] bg-[#5C3826] border-2 border-[#D9A05E] shadow-[0_2px_0_#2A180E] hover:-translate-y-0.5 active:translate-y-0.5 transition-transform"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-heading text-[#FFF4D6] bg-[#5C3826] border-2 border-[#D9A05E] shadow-[0_2px_0_#2A180E] hover:-translate-y-0.5 active:translate-y-0.5 transition-transform shrink-0"
               >
                 <ArrowBackIcon size={14} />
                 <span>TOWN</span>
@@ -49,19 +49,19 @@ export function WoodFrame({
             )}
 
             {title && (
-              <div className="text-center flex-1">
-                <h1 className="text-[14px] font-heading text-[#FFD95A] tracking-wider uppercase drop-shadow-[0_2px_0_#2A180E]">
+              <div className="text-center px-1">
+                <h1 className="text-xs sm:text-sm font-heading text-[#FFD95A] tracking-wider uppercase drop-shadow-[0_2px_0_#2A180E] leading-relaxed">
                   {title}
                 </h1>
                 {subtitle && (
-                  <p className="text-sm sm:text-base font-body text-[#FFF4D6] opacity-90 mt-0.5">
+                  <p className="text-xs sm:text-sm font-body text-[#FFF4D6] opacity-90 mt-0.5 leading-snug">
                     {subtitle}
                   </p>
                 )}
               </div>
             )}
 
-            <div className="w-16 hidden sm:block" />
+            <div className="w-[84px] hidden sm:block" />
           </div>
         )}
 

@@ -22,14 +22,14 @@ export function PixelInput({
   return (
     <div className="w-full flex flex-col gap-1.5 font-body">
       {label && (
-        <label className={`text-[11px] sm:text-xs font-heading text-[#FFF4D6] uppercase tracking-wide flex justify-between min-h-[1.75rem] sm:min-h-[2rem] items-end ${labelClassName}`}>
+        <label className={`text-xs font-body font-semibold text-[#FFF4D6] uppercase tracking-wider flex justify-between items-center min-h-[1.5rem] ${labelClassName}`}>
           <span className="leading-snug">{label}</span>
         </label>
       )}
 
       <div className="relative flex items-center">
         {prefix && (
-          <span className="absolute left-3 text-base sm:text-lg text-[#FFD95A] font-heading pointer-events-none select-none">
+          <span className="absolute left-3 text-base sm:text-lg text-[#FFD95A] font-body font-bold pointer-events-none select-none">
             {prefix}
           </span>
         )}
