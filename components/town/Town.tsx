@@ -797,13 +797,13 @@ export function Town() {
   const today = getTodayISO();
   const hasPettedToday = state.lastPettedDate === today;
 
-  // Pet Sheru position (stays near the cobblestone plaza fountain & well)
+  // Pet Sheru position (open cobblestone plaza west of the well)
   const petPos = useMemo(() => {
-    return { x: 5.8, y: 5.4 };
+    return { x: 4.5, y: 5.0 };
   }, []);
 
   const isNearSheru = useMemo(() => {
-    return Math.hypot(charPos.x - petPos.x, charPos.y - petPos.y) < 1.3;
+    return Math.hypot(charPos.x - petPos.x, charPos.y - petPos.y) < 1.4;
   }, [charPos.x, charPos.y, petPos.x, petPos.y]);
 
   // Unresolved dilemma trigger check
@@ -1526,6 +1526,20 @@ export function Town() {
           <span>Talk to {nearestNpc.name} (Press E or SPACE)</span>
           <span>➔</span>
         </button>
+      ) : isNearSheru && !isEntering ? (
+        <button
+          type="button"
+          onClick={() => {
+            petDog();
+            setSheruPettedAnim(true);
+            setTimeout(() => setSheruPettedAnim(false), 2000);
+          }}
+          className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2 animate-bounce"
+        >
+          <span>🐾</span>
+          <span>Pet Sheru (+10% Happiness! Press SPACE or E)</span>
+          <span>❤️</span>
+        </button>
       ) : null}
 
       {/* On-Screen Mobile / Touch Virtual Controls */}
@@ -1602,8 +1616,10 @@ export function Town() {
                     ? 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold'
                     : nearestNpc
                     ? 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold'
-                    : isNearSheru && !hasPettedToday
-                    ? 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold'
+                    : isNearSheru
+                    ? (hasPettedToday
+                        ? 'bg-[#2A9D8F] text-[#FFF4D6] border-[#FFD95A] font-bold'
+                        : 'bg-[#FFD95A] text-[#1B1B1F] border-[#FFF4D6] animate-pulse font-bold')
                     : 'bg-[#3A3F47] text-[#B4BAC4] border-[#4E5561]'
                 }`}
                 title={
@@ -1617,7 +1633,7 @@ export function Town() {
                 }
                 aria-label="Action / Enter"
               >
-                {nearbyBuilding ? 'IN' : nearestNpc ? 'TALK' : isNearSheru && !hasPettedToday ? 'PET' : 'OK'}
+                {nearbyBuilding ? 'IN' : nearestNpc ? 'TALK' : isNearSheru ? 'PET' : 'OK'}
               </button>
 
               <button

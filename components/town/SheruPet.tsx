@@ -42,6 +42,9 @@ export function SheruPet({
       className="cursor-pointer group"
       onClick={handlePetClick}
     >
+      {/* Expanded invisible hit area for easy click & touch interaction */}
+      <rect x="-24" y="-30" width="48" height="40" fill="transparent" />
+
       {/* Dynamic Ground Shadow */}
       <ellipse cx="0" cy="2" rx="10" ry="5" fill="#1B1B1F" opacity="0.35" />
 
