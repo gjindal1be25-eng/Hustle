@@ -88,8 +88,8 @@ export function isBlocked(x: number, y: number): boolean {
   }
 
   // 1. Building Footprints
-  // Work: [0.8, 2.4] x [1.4, 3.0]
-  if (x >= 0.8 && x <= 2.4 && y >= 1.4 && y <= 3.0) return true;
+  // Work: [1.18, 2.78] x [1.25, 2.85]
+  if (x >= 1.15 && x <= 2.8 && y >= 1.2 && y <= 2.85) return true;
   // Town hall: [4.14, 6.86] x [0.8, 2.72]
   if (x >= 4.14 && x <= 6.86 && y >= 0.8 && y <= 2.72) return true;
   // Vault: [7.78, 10.02] x [1.38, 3.1]
@@ -100,8 +100,8 @@ export function isBlocked(x: number, y: number): boolean {
   if (x >= 6.74 && x <= 9.46 && y >= 4.4 && y <= 6.25) return true;
   // Market: [1.4, 3.8] x [7.16, 9.35] (stand point at 2.0, 9.7)
   if (x >= 1.4 && x <= 3.8 && y >= 7.16 && y <= 9.35) return true;
-  // School: [7.0, 9.4] x [7.26, 8.7] (stand point at 8.6, 9.7)
-  if (x >= 7.0 && x <= 9.4 && y >= 7.26 && y <= 8.7) return true;
+  // School: [7.25, 9.65] x [7.6, 9.35] (stand point at 8.6, 9.7)
+  if (x >= 7.25 && x <= 9.65 && y >= 7.6 && y <= 9.35) return true;
 
   // 2. Plaza Well: [4.95, 5.65] x [4.65, 5.35]
   if (x >= 4.9 && x <= 5.7 && y >= 4.6 && y <= 5.4) return true;
@@ -121,8 +121,6 @@ export function isBlocked(x: number, y: number): boolean {
     { x: 11.6, y: 8.0 },
     { x: 1.2, y: 10.3 },
     { x: 2.3, y: 10.6 },
-    { x: 3.4, y: 10.2 },
-    { x: 4.1, y: 10.7 },
     { x: 6.2, y: 10.5 },
   ];
   for (const t of trees) {

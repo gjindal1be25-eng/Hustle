@@ -37,13 +37,13 @@ const BUILDINGS: BuildingDef[] = [
     route: '/work',
     desc: 'Log Income & View Career Ranks',
     doorNode: 'work_door',
-    tx: 0.0,
-    ty: 0.6,
+    tx: 0.38,
+    ty: 0.45,
     k: 0.8,
-    frontX: 2.0,
-    frontY: 3.3,
-    roofX: 1.6,
-    roofY: 2.0,
+    frontX: 3.07,
+    frontY: 3.14,
+    roofX: 1.98,
+    roofY: 1.65,
     roofZ: 3.4,
   },
   {
@@ -127,13 +127,13 @@ const BUILDINGS: BuildingDef[] = [
     route: '/school',
     desc: '8 Financial Wisdom Book Lessons',
     doorNode: 'school_door',
-    tx: 6.6,
-    ty: 6.3,
+    tx: 6.85,
+    ty: 6.65,
     k: 0.8,
-    frontX: 8.6,
-    frontY: 9.7,
-    roofX: 8.2,
-    roofY: 7.8,
+    frontX: 9.70,
+    frontY: 9.58,
+    roofX: 8.45,
+    roofY: 8.25,
     roofZ: 3.2,
   },
 ];
@@ -583,13 +583,13 @@ function generateTownSceneElements(
 
   // Buildings & Scenery items depth-sorted
   const items: [number, () => void][] = [];
-  items.push([1.2, () => { tx = 0.0; ty = 0.6; k = 0.8; work(); }]);
+  items.push([1.2, () => { tx = 0.38; ty = 0.45; k = 0.8; work(); }]);
   items.push([3.5, () => { tx = 3.9; ty = 0.0; k = 0.8; townhall(); }]);
   items.push([7.8, () => { tx = 7.3; ty = 0.9; k = 0.8; vault(); }]);
   items.push([4.5, () => { tx = 0.9; ty = 3.2; k = 0.8; home(); }]);
   items.push([9.5, () => { tx = 5.93; ty = 3.9; k = 0.62; bank(); }]);
   items.push([8.5, () => { tx = 1.0; ty = 6.6; k = 0.8; market(); }]);
-  items.push([13.2, () => { tx = 6.6; ty = 6.3; k = 0.8; school(); }]);
+  items.push([13.5, () => { tx = 6.85; ty = 6.65; k = 0.8; school(); }]);
 
   // East bank scenery
   items.push([13.0, () => tree(11.7, 1.3)]);
@@ -610,8 +610,6 @@ function generateTownSceneElements(
   // Front lawn scenery (orchard trees, gate lamps, fences)
   items.push([11.5, () => tree(1.2, 10.3)]);
   items.push([12.9, () => tree(2.3, 10.6)]);
-  items.push([13.6, () => tree(3.4, 10.2)]);
-  items.push([14.8, () => tree(4.1, 10.7)]);
   items.push([15.85, () => lamp(4.8, 11.05)]);
   items.push([16.7, () => lamp(5.65, 11.05)]);
   items.push([16.7, () => tree(6.2, 10.5)]);
