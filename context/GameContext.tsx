@@ -23,6 +23,7 @@ import {
   LoanSummary,
   GameEvent,
   Lesson,
+  Badge,
 } from '@/lib/types';
 import { loadGameState, saveGameState, clearGameState, INITIAL_STATE } from '@/lib/storage';
 import {
@@ -79,6 +80,7 @@ type Action =
   | { type: 'TOGGLE_RECURRING'; payload: string }
   | { type: 'DELETE_RECURRING'; payload: string }
   | { type: 'MARK_LESSON_SEEN'; payload: number }
+  | { type: 'UNLOCK_BADGES'; payload: Badge[] }
   | { type: 'UPDATE_LAST_SEEN_LEVEL'; payload: number }
   | { type: 'SET_THEME'; payload: ThemeMode }
   | { type: 'LOAD_DEMO' }
@@ -209,6 +211,12 @@ function gameReducer(state: GameState, action: Action): GameState {
         ],
       };
 
+    case 'UNLOCK_BADGES':
+      return {
+        ...state,
+        badges: [...state.badges, ...action.payload],
+      };
+
     case 'UPDATE_LAST_SEEN_LEVEL':
       return {
         ...state,
@@ -268,6 +276,7 @@ interface GameContextType {
   toggleRecurring: (id: string) => void;
   deleteRecurring: (id: string) => void;
   dismissLesson: (lessonId: number) => void;
+  updateLastSeenLevel: (lvl: number) => void;
   setTheme: (theme: ThemeMode) => void;
   setCareerPath: (path: CareerPath) => void;
   loadDemo: () => void;
@@ -398,6 +407,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (!isLoaded) return;
     const newBadges = checkBadgeUnlocks(state, today);
     if (newBadges.length > 0) {
+      dispatch({ type: 'UNLOCK_BADGES', payload: newBadges });
       playFanfareSound();
       newBadges.forEach((b) => {
         addToast('Badge Unlocked! 🏆', `You earned the "${b.id.replace('_', ' ')}" badge!`, 'success');
@@ -623,6 +633,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'MARK_LESSON_SEEN', payload: lessonId });
   };
 
+  const updateLastSeenLevel = (lvl: number) => {
+    dispatch({ type: 'UPDATE_LAST_SEEN_LEVEL', payload: lvl });
+  };
+
   const setTheme = (theme: ThemeMode) => {
     dispatch({ type: 'SET_THEME', payload: theme });
   };
@@ -679,6 +693,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         toggleRecurring,
         deleteRecurring,
         dismissLesson,
+        updateLastSeenLevel,
         setTheme,
         setCareerPath,
         loadDemo,

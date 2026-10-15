@@ -83,7 +83,7 @@ export function evaluateEvents(state: GameState, todayStr?: string): GameEvent {
   // Check Priority 3: Goal Reached
   const newlyReachedGoal = state.goals.find((g) => {
     const { isReached } = calculateGoalProgress(g, state.transactions, today);
-    return isReached && !g.reachedDate;
+    return isReached && (!g.reachedDate || g.reachedDate === today);
   });
 
   if (newlyReachedGoal) {

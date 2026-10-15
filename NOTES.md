@@ -4,7 +4,7 @@
 - Project scaffolded with Next.js (App Router), TypeScript, Tailwind CSS, and Vitest.
 - Isolated in subfolder `nexus-store/hustle` to preserve user's existing workspace files cleanly.
 - Node.js scripts executed using `npm.cmd` on Windows.
-- Google retro fonts (`Press Start 2P` for pixel headings, `VT323` for body and dialogue) configured in layout and global CSS with `monospace` fallback.
+- Google retro fonts (Hybrid: `Press Start 2P` for arcade pixel headings, `JetBrains Mono` for crisp, high-readability body, dialogues, and financial data) configured in layout and global CSS with `monospace` fallback.
 - Disclaimer footer created in `components/DisclaimerFooter.tsx`.
 - Vitest configured with node environment and `@/` path alias.
 

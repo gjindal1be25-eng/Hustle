@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { SetupFlow } from '@/components/setup/SetupFlow';
 import { HudBar } from '@/components/ui/HudBar';
@@ -40,49 +39,7 @@ export default function HomePage() {
           <Town />
         </div>
 
-        {/* Quick Travel Button Ribbon */}
-        <div className="w-full flex flex-wrap items-center justify-center gap-2">
-          <Link href="/story">
-            <PixelButton variant="wood" size="sm">
-              🏡 Cottage (Diary)
-            </PixelButton>
-          </Link>
-          <Link href="/work">
-            <PixelButton variant="wood" size="sm">
-              💼 Work (+₹)
-            </PixelButton>
-          </Link>
-          <Link href="/market">
-            <PixelButton variant="wood" size="sm">
-              🛒 Market (-₹)
-            </PixelButton>
-          </Link>
-          <Link href="/bank">
-            <PixelButton variant="stone" size="sm">
-              🏦 Bank (Loans)
-            </PixelButton>
-          </Link>
-          <Link href="/vault">
-            <PixelButton variant="stone" size="sm">
-              🗝️ Vault (Goals)
-            </PixelButton>
-          </Link>
-          <Link href="/townhall">
-            <PixelButton variant="stone" size="sm">
-              🏛️ Town Hall (Charts)
-            </PixelButton>
-          </Link>
-          <Link href="/school">
-            <PixelButton variant="stone" size="sm">
-              📚 School (Learn)
-            </PixelButton>
-          </Link>
-          <Link href="/settings">
-            <PixelButton variant="stone" size="sm">
-              ⚙️ Settings
-            </PixelButton>
-          </Link>
-        </div>
+
 
         {/* 96px Bottom RPG Dialogue Text Box */}
         <div className="w-full mt-auto pt-2">

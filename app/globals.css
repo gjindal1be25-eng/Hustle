@@ -3,11 +3,10 @@
 @layer base {
   :root {
     --font-heading: 'Press Start 2P', monospace;
-    --font-body: 'VT323', monospace;
   }
 
   body {
-    font-family: var(--font-body), monospace;
+    font-family: var(--font-body), 'JetBrains Mono', monospace;
     background-color: #1b1b1f;
     color: #FFF4D6;
     margin: 0;
@@ -20,11 +19,16 @@
 }
 
 .font-body {
-  font-family: var(--font-body), monospace;
+  font-family: var(--font-body), 'JetBrains Mono', monospace;
 }
 
 .font-heading {
   font-family: var(--font-heading), monospace;
+}
+
+/* Backward compatibility alias for legacy VT323 classnames */
+.font-\[\'VT323\'\] {
+  font-family: var(--font-body), 'JetBrains Mono', monospace;
 }
 
 @keyframes idleBob {

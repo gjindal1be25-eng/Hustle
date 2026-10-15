@@ -115,7 +115,7 @@ export function HudBar() {
           <div
             className={`w-2.5 h-2.5 ${
               hasDanger
-                ? 'bg-[#EE6A5E] animate-ping'
+                ? 'bg-[#EE6A5E] animate-pulse'
                 : hasWarning
                 ? 'bg-[#F4B63A]'
                 : 'bg-[#5DB84A]'

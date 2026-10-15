@@ -32,23 +32,23 @@ const BUILDINGS: BuildingDef[] = [
     tx: 0.0,
     ty: 0.6,
     k: 0.8,
-    frontX: 1.6,
-    frontY: 3.6,
+    frontX: 2.0,
+    frontY: 3.3,
     roofX: 1.6,
     roofY: 2.0,
     roofZ: 3.4,
   },
   {
     id: 'townhall',
-    name: 'Town hall',
+    name: 'Town Hall',
     route: '/townhall',
     desc: 'Summary Charts & Budget Analytics',
     doorNode: 'townhall_door',
     tx: 3.9,
     ty: 0.0,
     k: 0.8,
-    frontX: 5.5,
-    frontY: 2.8,
+    frontX: 5.3,
+    frontY: 3.3,
     roofX: 5.5,
     roofY: 1.4,
     roofZ: 3.8,
@@ -62,8 +62,8 @@ const BUILDINGS: BuildingDef[] = [
     tx: 7.3,
     ty: 0.9,
     k: 0.8,
-    frontX: 8.9,
-    frontY: 3.9,
+    frontX: 8.6,
+    frontY: 3.3,
     roofX: 8.9,
     roofY: 2.5,
     roofZ: 3.4,
@@ -77,8 +77,8 @@ const BUILDINGS: BuildingDef[] = [
     tx: 0.9,
     ty: 3.2,
     k: 0.8,
-    frontX: 2.5,
-    frontY: 6.1,
+    frontX: 2.0,
+    frontY: 6.4,
     roofX: 2.5,
     roofY: 4.8,
     roofZ: 2.4,
@@ -92,8 +92,8 @@ const BUILDINGS: BuildingDef[] = [
     tx: 5.93,
     ty: 3.9,
     k: 0.62,
-    frontX: 8.1,
-    frontY: 6.8,
+    frontX: 8.6,
+    frontY: 6.4,
     roofX: 8.1,
     roofY: 5.3,
     roofZ: 4.4,
@@ -107,8 +107,8 @@ const BUILDINGS: BuildingDef[] = [
     tx: 1.0,
     ty: 6.6,
     k: 0.8,
-    frontX: 2.6,
-    frontY: 9.5,
+    frontX: 2.0,
+    frontY: 9.7,
     roofX: 2.6,
     roofY: 8.2,
     roofZ: 2.2,
@@ -122,8 +122,8 @@ const BUILDINGS: BuildingDef[] = [
     tx: 6.6,
     ty: 6.3,
     k: 0.8,
-    frontX: 8.2,
-    frontY: 9.15,
+    frontX: 8.6,
+    frontY: 9.7,
     roofX: 8.2,
     roofY: 7.8,
     roofZ: 3.2,
@@ -245,10 +245,10 @@ function generateTownSceneElements(extraH: number, isNight: boolean): React.Reac
     box(x - 0.05, y - 0.05, 1.0, 0.2, 0.2, 0.22, '#FFE27A', undefined, `lmp_g_${x}_${y}`);
   }
 
-  function fence(x0: number, x1: number, y = 9.5) {
+  function fence(x0: number, x1: number, y: number) {
     G();
     for (let x = x0; x <= x1 + 0.01; x += 0.45) {
-      box(x, y, 0, 0.1, 0.1, 0.4, '#C98F4E', undefined, `fnc_p_${x}_${y}`);
+      box(x, y, 0, 0.1, 0.1, 0.4, '#C98F4E', undefined, `fnc_p_${x.toFixed(2)}_${y}`);
     }
     box(x0, y + 0.03, 0.2, x1 - x0 + 0.1, 0.04, 0.07, '#E0B070', undefined, `fnc_r_${x0}_${y}`);
   }
@@ -385,126 +385,171 @@ function generateTownSceneElements(extraH: number, isNight: boolean): React.Reac
 
   // --- Ground & Scenery Render ---
   G();
-  box(0.5, 0.5, -1.1, 9.4, 8.6, 0.6, '#9A6A3A', ['#9A6A3A', '#85592F', '#6B4524'], 'ground1');
-  box(1.6, 1.5, -1.7, 6.6, 6.0, 0.6, '#8B5E34', ['#8B5E34', '#7A5230', '#5E3C1F'], 'ground2');
-  box(0, 0, -0.5, 11.2, 9.8, 0.5, '#8FD672', ['#8FD672', '#A27140', '#85592F'], 'ground3');
+  box(0.5, 0.5, -1.1, 11.4, 10.2, 0.6, '#9A6A3A', ['#9A6A3A', '#85592F', '#6B4524'], 'ground1');
+  box(1.6, 1.5, -1.7, 8.2, 7.4, 0.6, '#8B5E34', ['#8B5E34', '#7A5230', '#5E3C1F'], 'ground2');
+  box(0, 0, -0.5, 12.6, 11.4, 0.5, '#8FD672', ['#8FD672', '#A27140', '#85592F'], 'ground3');
 
-  // Grass checkerboard
-  for (let i = 0; i < 10; i++) {
-    for (let j = 0; j < 9; j++) {
+  // Grass checkerboard: i < 12, j < 11
+  for (let i = 0; i < 12; i++) {
+    for (let j = 0; j < 11; j++) {
       if ((i + j) % 2) {
         poly([[i, j, 0], [i + 1, j, 0], [i + 1, j + 1, 0], [i, j + 1, 0]], '#86D068', 0, `chk_${i}_${j}`);
       }
     }
   }
 
-  // River and water
+  // River and water to y = 11.4
   const riverWater = isNight ? '#1F4F9A' : '#59B9F2';
   const riverDeep = isNight ? '#173D7A' : '#4AA9E8';
-  poly([[10.25, 0, 0], [10.4, 0, 0], [10.4, 9.8, 0], [10.25, 9.8, 0]], '#C9A86A', 0, 'sand');
-  poly([[10.4, 0, 0], [11.2, 0, 0], [11.2, 9.8, 0], [10.4, 9.8, 0]], riverWater, 0, 'river1');
-  poly([[10.4, 0, 0], [10.7, 0, 0], [10.7, 9.8, 0], [10.4, 9.8, 0]], riverDeep, 0, 'river2');
-  [1.2, 4.4, 7.6].forEach((y, idx) => {
+  poly([[10.25, 0, 0], [10.4, 0, 0], [10.4, 11.4, 0], [10.25, 11.4, 0]], '#C9A86A', 0, 'sand1');
+  poly([[10.4, 0, 0], [11.2, 0, 0], [11.2, 11.4, 0], [10.4, 11.4, 0]], riverWater, 0, 'river1');
+  poly([[10.4, 0, 0], [10.7, 0, 0], [10.7, 11.4, 0], [10.4, 11.4, 0]], riverDeep, 0, 'river2');
+  poly([[11.2, 0, 0], [11.35, 0, 0], [11.35, 11.4, 0], [11.2, 11.4, 0]], '#C9A86A', 0, 'sand2');
+  [1.2, 4.4, 7.6, 10.4].forEach((y, idx) => {
     poly([[10.65, y, 0], [11.05, y, 0], [11.05, y + 0.25, 0], [10.65, y + 0.25, 0]], '#A8E0FC', 0, `rip_${idx}`);
   });
 
-  // --- CR 1: Edged Dirt Roads from town-reference.html ---
-  // dirt surface #A27140, darker edge #85592F, scattered pebbles, stone steps at each door
-  function drawRoadSegment(x0: number, x1: number, y0: number, y1: number, key: string) {
+  // Front lawn Pond
+  poly([[7.45, 10.15, 0], [9.95, 10.15, 0], [9.95, 11.15, 0], [7.45, 11.15, 0]], '#E6D3A0', 0, 'pond_sand');
+  poly([[7.6, 10.3, 0], [9.8, 10.3, 0], [9.8, 11.0, 0], [7.6, 11.0, 0]], riverWater, 0, 'pond_water');
+  poly([[7.9, 10.5, 0], [8.3, 10.5, 0], [8.3, 10.6, 0], [7.9, 10.6, 0]], '#A8E0FC', 0, 'pond_rip1');
+  poly([[8.8, 10.75, 0], [9.2, 10.75, 0], [9.2, 10.85, 0], [8.8, 10.85, 0]], '#A8E0FC', 0, 'pond_rip2');
+
+  // --- Clearer Roads with darker border and centre dashes ---
+  function road(
+    x0: number,
+    x1: number,
+    y0: number,
+    y1: number,
+    keyPrefix: string,
+    dashDir?: 'x' | 'y',
+    dashPos?: number
+  ) {
     const minX = Math.min(x0, x1);
     const maxX = Math.max(x0, x1);
     const minY = Math.min(y0, y1);
     const maxY = Math.max(y0, y1);
-    const e = 0.08; // clear edge width
+
+    // Darker border: #B79A60, 0.06 larger on every side
     poly(
-      [[minX - e, minY - e, 0], [maxX + e, minY - e, 0], [maxX + e, maxY + e, 0], [minX - e, maxY + e, 0]],
-      '#85592F',
+      [
+        [minX - 0.06, minY - 0.06, 0],
+        [maxX + 0.06, minY - 0.06, 0],
+        [maxX + 0.06, maxY + 0.06, 0],
+        [minX - 0.06, maxY + 0.06, 0],
+      ],
+      '#B79A60',
       0,
-      `${key}_edge`
+      `${keyPrefix}_border`
     );
+
+    // Road fill: #E2C48C
     poly(
-      [[minX, minY, 0], [maxX, minY, 0], [maxX, maxY, 0], [minX, maxY, 0]],
-      '#A27140',
+      [
+        [minX, minY, 0],
+        [maxX, minY, 0],
+        [maxX, maxY, 0],
+        [minX, maxY, 0],
+      ],
+      '#E2C48C',
       0,
-      `${key}_surf`
+      `${keyPrefix}_fill`
     );
+
+    // Centre dashes in #FFF3D2: length 0.28, pitch 0.55, thickness 0.06
+    if (dashDir === 'x' && dashPos !== undefined) {
+      let dIdx = 0;
+      for (let x = minX + 0.12; x + 0.28 <= maxX - 0.06; x += 0.55) {
+        poly(
+          [
+            [x, dashPos - 0.03, 0],
+            [x + 0.28, dashPos - 0.03, 0],
+            [x + 0.28, dashPos + 0.03, 0],
+            [x, dashPos + 0.03, 0],
+          ],
+          '#FFF3D2',
+          0,
+          `${keyPrefix}_dash_${dIdx++}`
+        );
+      }
+    } else if (dashDir === 'y' && dashPos !== undefined) {
+      let dIdx = 0;
+      for (let y = minY + 0.12; y + 0.28 <= maxY - 0.06; y += 0.55) {
+        poly(
+          [
+            [dashPos - 0.03, y, 0],
+            [dashPos + 0.03, y, 0],
+            [dashPos + 0.03, y + 0.28, 0],
+            [dashPos - 0.03, y + 0.28, 0],
+          ],
+          '#FFF3D2',
+          0,
+          `${keyPrefix}_dash_${dIdx++}`
+        );
+      }
+    }
   }
 
-  // Back road spine (connecting Work 1.6 to Vault 8.9 and bridge 10.2)
-  drawRoadSegment(1.4, 10.3, 3.4, 3.8, 'rd_back_spine');
-  // Town hall spur
-  drawRoadSegment(5.3, 5.7, 2.6, 3.6, 'rd_townhall_spur');
-  // Vault spur
-  drawRoadSegment(8.7, 9.1, 3.6, 4.1, 'rd_vault_spur');
-  // Back-to-Plaza trunk
-  drawRoadSegment(5.3, 5.7, 3.6, 4.4, 'rd_trunk_north');
+  // Road list:
+  // Main horizontal: (.8, 10.0, 3.0, 3.5) with dashes at y 3.25; east bank (11.45, 12.3, 3.0, 3.5) with dashes at y 3.25
+  road(0.8, 10.0, 3.0, 3.5, 'rd_main', 'x', 3.25);
+  road(11.45, 12.3, 3.0, 3.5, 'rd_east_bank', 'x', 3.25);
 
-  // Cobblestone Plaza (4.0 to 6.8, 4.2 to 6.2)
-  poly([[4.0, 4.2, 0], [6.8, 4.2, 0], [6.8, 6.2, 0], [4.0, 6.2, 0]], '#9AA0A8', 0, 'plaza_base');
+  // Lower horizontal: (.8, 9.9, 6.5, 7.0) with dashes at y 6.75
+  road(0.8, 9.9, 6.5, 7.0, 'rd_lower', 'x', 6.75);
+
+  // Vertical spine: (5.1, 5.5, 7.0, 11.4) with dashes at x 5.3, and short link (5.1, 5.5, 3.5, 3.7)
+  road(5.1, 5.5, 7.0, 11.4, 'rd_vert_spine', 'y', 5.3);
+  road(5.1, 5.5, 3.5, 3.7, 'rd_vert_link');
+
+  // NEW front road to the Market and School doors: (1.8, 8.8, 9.6, 10.0) with dashes at y 9.8, plus stubs (1.8, 2.2, 9.4, 9.6) and (8.4, 8.8, 9.4, 9.6)
+  road(1.8, 8.8, 9.6, 10.0, 'rd_front', 'x', 9.8);
+  road(1.8, 2.2, 9.4, 9.6, 'rd_stub_mkt_front');
+  road(8.4, 8.8, 9.4, 9.6, 'rd_stub_sch_front');
+
+  // Door stubs: (1.8,2.2,2.7,3.0), (5.1,5.5,2.7,3.0), (8.4,8.8,2.7,3.0), (1.8,2.2,5.9,6.5), (8.4,8.8,6.5,6.6)
+  road(1.8, 2.2, 2.7, 3.0, 'rd_stub_work');
+  road(5.1, 5.5, 2.7, 3.0, 'rd_stub_th');
+  road(8.4, 8.8, 2.7, 3.0, 'rd_stub_vault');
+  road(1.8, 2.2, 5.9, 6.5, 'rd_stub_home');
+  road(8.4, 8.8, 6.5, 6.6, 'rd_stub_bank');
+
+  // Cobblestone Plaza (3.9 to 6.7, 3.6 to 6.4)
+  poly([[3.9, 3.6, 0], [6.7, 3.6, 0], [6.7, 6.4, 0], [3.9, 6.4, 0]], '#9AA0A8', 0, 'plaza_base');
   for (let i = 0; i < 2; i++) {
     for (let j = 0; j < 2; j++) {
       poly(
-        [[4.1 + 1.3 * i, 4.3 + 0.9 * j, 0], [5.4 + 1.3 * i, 4.3 + 0.9 * j, 0], [5.4 + 1.3 * i, 5.2 + 0.9 * j, 0], [4.1 + 1.3 * i, 5.2 + 0.9 * j, 0]],
+        [[4.0 + 1.3 * i, 3.7 + 1.3 * j, 0], [5.3 + 1.3 * i, 3.7 + 1.3 * j, 0], [5.3 + 1.3 * i, 5.0 + 1.3 * j, 0], [4.0 + 1.3 * i, 5.0 + 1.3 * j, 0]],
         (i + j) % 2 ? '#DCDFE4' : '#C2C7CF',
         0,
         `plz_${i}_${j}`
       );
     }
   }
-  // Plaza Well
-  box(5.15, 4.85, 0, 0.7, 0.7, 0.3, '#B4BAC4', undefined, 'well_wall');
-  poly([[5.25, 4.95, 0.3], [5.75, 4.95, 0.3], [5.75, 5.45, 0.3], [5.25, 5.45, 0.3]], riverWater, 0, 'well_water');
+  // Plaza Well (4.95 to 5.65, 4.65 to 5.35)
+  box(4.95, 4.65, 0, 0.7, 0.7, 0.3, '#B4BAC4', undefined, 'well_wall');
+  poly([[5.05, 4.75, 0.3], [5.55, 4.75, 0.3], [5.55, 5.25, 0.3], [5.05, 5.25, 0.3]], riverWater, 0, 'well_water');
 
-  // Home road spur (from Plaza west 4.0 to Home door 2.5)
-  drawRoadSegment(2.3, 4.1, 5.9, 6.3, 'rd_home_spur');
-  // Bank road spur (from Plaza east 6.6 to Bank door 8.1)
-  drawRoadSegment(6.7, 8.3, 5.9, 6.3, 'rd_bank_cross');
-  drawRoadSegment(7.9, 8.3, 6.1, 7.0, 'rd_bank_spur');
+  // Wooden Plank Bridge across river (10.0 to 11.45, length 1.45, y 3.0 to 3.5)
+  box(10.0, 3.0, 0, 1.45, 0.5, 0.15, '#C98F4E', undefined, 'bridge_floor');
+  for (let i = 0; i < 5; i++) {
+    box(10.08 + i * 0.28, 3.0, 0.15, 0.05, 0.5, 0.01, '#A9763F', undefined, `br_plank_${i}`);
+  }
+  box(10.0, 3.0, 0.15, 1.45, 0.07, 0.22, '#8A5A2B', undefined, 'br_rail1');
+  box(10.0, 3.43, 0.15, 1.45, 0.07, 0.22, '#8A5A2B', undefined, 'br_rail2');
 
-  // Plaza-to-Front trunk
-  drawRoadSegment(5.3, 5.7, 6.1, 8.35, 'rd_trunk_south');
-  // Front cross road (from Market 2.6 to School 8.2)
-  drawRoadSegment(2.4, 8.4, 8.05, 8.35, 'rd_front_cross');
-  // Market spur
-  drawRoadSegment(2.4, 2.8, 8.2, 9.7, 'rd_market_spur');
-  // School spur
-  drawRoadSegment(8.0, 8.4, 8.2, 9.35, 'rd_school_spur');
-
-  // Stone steps at each door
-  const stoneDoors: [number, number][] = [
-    [1.6, 3.4], // Work
-    [5.5, 2.7], // Town hall
-    [8.9, 3.8], // Vault
-    [2.5, 5.9], // Home
-    [8.1, 6.7], // Bank
-    [2.6, 9.3], // Market
-    [8.2, 9.0], // School
-  ];
-  stoneDoors.forEach(([dx, dy], i) => {
-    box(dx - 0.25, dy - 0.15, 0, 0.5, 0.3, 0.08, '#DDE0E6', undefined, `step_${i}`);
-  });
-
-  // Scattered pebbles on dirt roads
+  // Pebbles moved to road edges: y 3.07 and 3.37 on main road, y 6.57 and 6.87 on lower road
   function peb(x: number, y: number, key: string) {
     poly([[x, y, 0], [x + 0.12, y, 0], [x + 0.12, y + 0.1, 0], [x, y + 0.1, 0]], '#C8CDD4', 0, key);
   }
-  [1.8, 3.2, 4.6, 6.4, 7.8, 9.2].forEach((x, i) => {
-    peb(x, 3.5, `peb_b1_${i}`);
-    peb(x + 0.3, 3.7, `peb_b2_${i}`);
-  });
-  [3.0, 4.4, 6.0, 7.4].forEach((x, i) => {
-    peb(x, 8.15, `peb_f1_${i}`);
-  });
-  peb(5.4, 7.0, 'peb_trk1');
-  peb(5.6, 7.6, 'peb_trk2');
-
-  // Wooden Plank Bridge across river
-  box(10.0, 3.4, 0, 1.2, 0.5, 0.15, '#C98F4E', undefined, 'bridge_floor');
-  for (let i = 0; i < 4; i++) {
-    box(10.1 + i * 0.3, 3.4, 0.15, 0.05, 0.5, 0.01, '#A9763F', undefined, `br_plank_${i}`);
+  for (let x = 1.2; x < 9.8; x += 0.9) {
+    peb(x, 3.07, `peb_m1_${x.toFixed(1)}`);
+    peb(x + 0.45, 3.37, `peb_m2_${x.toFixed(1)}`);
   }
-  box(10.0, 3.4, 0.15, 1.2, 0.07, 0.22, '#8A5A2B', undefined, 'br_rail1');
-  box(10.0, 3.83, 0.15, 1.2, 0.07, 0.22, '#8A5A2B', undefined, 'br_rail2');
+  for (let x = 1.2; x < 9.6; x += 0.9) {
+    peb(x, 6.57, `peb_l1_${x.toFixed(1)}`);
+    peb(x + 0.45, 6.87, `peb_l2_${x.toFixed(1)}`);
+  }
 
   // Tiny flowers
   function fl(x: number, y: number, c: string, key: string) {
@@ -518,34 +563,49 @@ function generateTownSceneElements(extraH: number, isNight: boolean): React.Reac
   fl(4.6, 9.0, '#FFF6E0', 'fl5');
   fl(0.5, 8.6, '#EE6A5E', 'fl6');
   fl(9.7, 8.8, '#F4B63A', 'fl7');
+  fl(11.9, 6.9, '#EE6A5E', 'fl_eb1');
+  fl(0.8, 10.8, '#F4B63A', 'fl_fl1');
+  fl(6.3, 10.6, '#EE6A5E', 'fl_fl2');
+  fl(11.6, 9.6, '#FFF6E0', 'fl_eb2');
 
-  // --- CR 2: Buildings Placed with Specified Nudges ---
+  // Buildings & Scenery items depth-sorted
   const items: [number, () => void][] = [];
-  // Work: nudge (-0.4, +0.3) -> tx = 0.0, ty = 0.6
   items.push([1.2, () => { tx = 0.0; ty = 0.6; k = 0.8; work(); }]);
-  // Town hall: nudge (+0.2, -0.5) -> tx = 3.9, ty = 0.0
   items.push([3.5, () => { tx = 3.9; ty = 0.0; k = 0.8; townhall(); }]);
-  // Vault: nudge (+0.3, +0.6) -> tx = 7.3, ty = 0.9
   items.push([7.8, () => { tx = 7.3; ty = 0.9; k = 0.8; vault(); }]);
-  // Home: nudge (+0.5, -0.3) -> tx = 0.9, ty = 3.2
   items.push([4.5, () => { tx = 0.9; ty = 3.2; k = 0.8; home(); }]);
-  // Bank: nudge (-0.5, +0.4) -> tx = 5.93, ty = 3.9
   items.push([9.5, () => { tx = 5.93; ty = 3.9; k = 0.62; bank(); }]);
-  // Market: nudge (+0.6, +0.3) -> tx = 1.0, ty = 6.6
   items.push([8.5, () => { tx = 1.0; ty = 6.6; k = 0.8; market(); }]);
-  // School: nudge (-0.4, -0.4) -> tx = 6.6, ty = 6.3
   items.push([13.2, () => { tx = 6.6; ty = 6.3; k = 0.8; school(); }]);
 
-  // Trees, bushes, lamps, fences repositioned to fill gaps without blocking roads or doors
-  items.push([12.5, () => tree(3.8, 8.8)]);
-  items.push([14.0, () => tree(6.6, 8.8)]);
-  items.push([9.8, () => lamp(3.7, 5.9)]);
-  items.push([12.2, () => lamp(6.9, 5.9)]);
+  // East bank scenery
+  items.push([13.0, () => tree(11.7, 1.3)]);
+  items.push([15.8, () => lamp(12.2, 3.6)]);
+  items.push([16.8, () => tree(11.8, 5.0)]);
+  items.push([17.8, () => {
+    box(11.6, 6.2, 0, 0.7, 0.25, 0.2, '#C98F4E', undefined, 'bench_seat');
+    box(11.6, 6.2, 0.2, 0.7, 0.07, 0.2, '#A9763F', undefined, 'bench_back');
+  }]);
+  items.push([19.6, () => tree(11.6, 8.0)]);
+
+  // Inner town scenery (lamps & bushes around plaza)
   items.push([8.8, () => bush(0.6, 4.8)]);
+  items.push([9.8, () => lamp(3.7, 5.9)]);
   items.push([11.8, () => bush(7.3, 4.8)]);
-  items.push([15.2, () => bush(4.5, 9.4)]);
-  items.push([13.0, () => fence(3.4, 4.4, 9.6)]);
-  items.push([14.8, () => fence(5.8, 6.8, 9.6)]);
+  items.push([12.2, () => lamp(6.9, 5.9)]);
+
+  // Front lawn scenery (orchard trees, gate lamps, fences)
+  items.push([11.5, () => tree(1.2, 10.3)]);
+  items.push([12.9, () => tree(2.3, 10.6)]);
+  items.push([13.6, () => tree(3.4, 10.2)]);
+  items.push([14.8, () => tree(4.1, 10.7)]);
+  items.push([15.85, () => lamp(4.8, 11.05)]);
+  items.push([16.7, () => lamp(5.65, 11.05)]);
+  items.push([16.7, () => tree(6.2, 10.5)]);
+
+  // Fences at y = 11.1: x 0.5 to 4.6 and x 6.0 to 10.1 (gap is entrance)
+  items.push([15.7, () => fence(0.5, 4.6, 11.1)]);
+  items.push([21.2, () => fence(6.0, 10.1, 11.1)]);
 
   items.sort((a, b) => a[0] - b[0]);
   items.forEach((it) => it[1]());
@@ -570,6 +630,15 @@ export function Town() {
   const walkingRef = useRef(false);
   const pathQueueRef = useRef<string[]>([]);
   const targetRouteRef = useRef<string | null>(null);
+  const walkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (walkIntervalRef.current) {
+        clearInterval(walkIntervalRef.current);
+      }
+    };
+  }, []);
 
   const theme = state.profile?.theme || 'system';
   const isNight = theme === 'night';
@@ -650,6 +719,12 @@ export function Town() {
       return;
     }
 
+    // Clear existing walking interval if any
+    if (walkIntervalRef.current) {
+      clearInterval(walkIntervalRef.current);
+      walkIntervalRef.current = null;
+    }
+
     // Follow path node by node
     pathQueueRef.current = path.slice(1);
     targetRouteRef.current = bDef.route;
@@ -657,7 +732,7 @@ export function Town() {
     setIsWalking(true);
 
     let stepIdx = 0;
-    const interval = setInterval(() => {
+    walkIntervalRef.current = setInterval(() => {
       if (stepIdx < pathQueueRef.current.length) {
         const nextNodeId = pathQueueRef.current[stepIdx];
         const nextNode = ROAD_NODES[nextNodeId];
@@ -667,7 +742,10 @@ export function Town() {
         }
         stepIdx++;
       } else {
-        clearInterval(interval);
+        if (walkIntervalRef.current) {
+          clearInterval(walkIntervalRef.current);
+          walkIntervalRef.current = null;
+        }
         walkingRef.current = false;
         setIsWalking(false);
         if (targetRouteRef.current) {
@@ -687,7 +765,7 @@ export function Town() {
     <div className="relative w-full max-w-[760px] mx-auto select-none overflow-hidden rounded-none border-[3px] border-[#3B2516] bg-[#121316] shadow-[0_8px_0_#1B1B1F]">
       <svg
         id="town-canvas"
-        viewBox="0 0 680 480"
+        viewBox="-10 0 700 530"
         role="img"
         className="w-full h-auto block"
         style={{ display: 'block' }}
@@ -698,9 +776,9 @@ export function Town() {
         </desc>
 
         {/* Sky Background */}
-        <rect x="0" y="0" width="680" height="160" fill={skyTop} />
-        <rect x="0" y="160" width="680" height="160" fill={skyMid} />
-        <rect x="0" y="320" width="680" height="160" fill={skyBot} />
+        <rect x="-10" y="0" width="700" height="177" fill={skyTop} />
+        <rect x="-10" y="177" width="700" height="177" fill={skyMid} />
+        <rect x="-10" y="354" width="700" height="177" fill={skyBot} />
 
         {/* Moon / Sun / Clouds */}
         {isNight ? (
@@ -810,7 +888,6 @@ export function Town() {
                 cy={sy - 15}
                 r="42"
                 fill="transparent"
-                className="hover:stroke-[#FFD95A] hover:stroke-2 hover:fill-[#FFD95A]/15 transition-all"
               />
 
               {/* Live Badge floating above roof (Section 5) */}
@@ -830,8 +907,8 @@ export function Town() {
                     x="0"
                     y="3"
                     textAnchor="middle"
-                    fontFamily="'VT323', monospace"
-                    fontSize="12"
+                    fontFamily="var(--font-body), monospace"
+                    fontSize="11"
                     fill="#FFD95A"
                     fontWeight="bold"
                   >
@@ -857,8 +934,8 @@ export function Town() {
                   x="0"
                   y="4"
                   textAnchor="middle"
-                  fontFamily="'VT323', monospace, sans-serif"
-                  fontSize="13"
+                  fontFamily="var(--font-body), monospace, sans-serif"
+                  fontSize="11"
                   fontWeight="bold"
                   fill="#2B3440"
                 >

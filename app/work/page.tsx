@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
@@ -24,10 +24,17 @@ export default function WorkPage() {
     addRecurring,
     toggleRecurring,
     deleteRecurring,
+    updateLastSeenLevel,
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'log' | 'recurring'>('log');
   const [showAllHistory, setShowAllHistory] = useState(false);
+
+  useEffect(() => {
+    if (level > (state.meta.lastSeenLevel || 1)) {
+      updateLastSeenLevel(level);
+    }
+  }, [level, state.meta.lastSeenLevel, updateLastSeenLevel]);
 
   // Form states
   const [amount, setAmount] = useState<string>('');

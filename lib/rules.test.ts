@@ -22,6 +22,7 @@ import { Transaction, Goal, Loan, Recurring, Category } from './types';
 import { LEVEL_THRESHOLDS } from './constants';
 import { ROAD_NODES, findShortestPath } from './roadGraph';
 import { getInsightTips } from './insights';
+import { checkBadgeUnlocks } from './badges';
 
 describe('Rules Engine - Pure Math & Formulas', () => {
   it('calculates balance accurately including opening balance', () => {
@@ -454,6 +455,36 @@ describe('Insight Tips Engine', () => {
     const budgetTip = tips.find((t) => t.type === 'alert' && t.title === 'Budget Alert');
     expect(budgetTip).toBeDefined();
     expect(budgetTip?.message).toContain('Food');
+  });
+});
+
+describe('Badge Engine', () => {
+  it('unlocks first_step badge upon logging first entry', () => {
+    const demo = generateDemoState('2026-10-14');
+    demo.badges = [];
+    const badges = checkBadgeUnlocks(demo, '2026-10-14');
+    expect(badges.some((b) => b.id === 'first_step')).toBe(true);
+  });
+
+  it('unlocks comeback_kid badge when recovering from zero or negative balance', () => {
+    const demo = generateDemoState('2026-10-14');
+    demo.badges = [];
+    demo.profile = {
+      name: 'Tester',
+      avatar: { hairColor: '#2C1810', outfitColor: '#2B4C7E' },
+      path: 'corporate',
+      openingBalance: 1000,
+      createdAt: '2026-10-01',
+      onboardingDone: true,
+      theme: 'system',
+    };
+    demo.transactions = [
+      { id: '1', type: 'expense', amount: 5000, date: '2026-10-02', note: 'Drop below 0', source: 'manual' },
+      { id: '2', type: 'income', amount: 15000, date: '2026-10-05', note: 'Recovery', source: 'manual' },
+    ];
+
+    const badges = checkBadgeUnlocks(demo, '2026-10-14');
+    expect(badges.some((b) => b.id === 'comeback_kid')).toBe(true);
   });
 });
 

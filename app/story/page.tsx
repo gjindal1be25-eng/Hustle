@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
@@ -21,10 +21,17 @@ export default function StoryPage() {
     savedMonths,
     activeEvent,
     budgetStatuses,
+    updateLastSeenLevel,
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'lessons'>('overview');
   const [showAllLessons, setShowAllLessons] = useState(false);
+
+  useEffect(() => {
+    if (level > (state.meta.lastSeenLevel || 1)) {
+      updateLastSeenLevel(level);
+    }
+  }, [level, state.meta.lastSeenLevel, updateLastSeenLevel]);
 
   const name = state.profile?.name || 'Hero';
   const today = getTodayISO();

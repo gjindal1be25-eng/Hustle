@@ -22,7 +22,7 @@
 
 ## 🏛️ Town Buildings & Features
 
-| Building | Anchor $(x, y)$ | Main Action (Top) | Tab 1 | Tab 2 |
+| Building | Door $(x, y)$ | Main Action (Top) | Tab 1 | Tab 2 |
 | :--- | :--- | :--- | :--- | :--- |
 | **Work** | $(1.6, 3.6)$ | Log Income Form | Log (5 rows) | Recurring (P1) |
 | **Market** | $(2.6, 9.5)$ | Log Expense Form | Log (5 rows) | Budgets |

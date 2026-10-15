@@ -1,5 +1,6 @@
 import { GameState, Badge } from './types';
 import {
+  calculateBalance,
   calculateNetSavings,
   calculateStreak,
   calculateLevel,
@@ -94,6 +95,21 @@ export function checkBadgeUnlocks(
         unlock('need_want_master');
       }
     }
+  }
+
+  // 10. Comeback Kid: climbed out of stranded or debt spiral
+  const currentBal = calculateBalance(state.profile?.openingBalance || 0, state.transactions, today);
+  let runningBal = state.profile?.openingBalance || 0;
+  let hadNegativeBal = runningBal <= 0;
+  const sortedTx = [...state.transactions].sort((a, b) => a.date.localeCompare(b.date));
+  for (const t of sortedTx) {
+    runningBal += t.type === 'income' ? t.amount : -t.amount;
+    if (runningBal <= 0) {
+      hadNegativeBal = true;
+    }
+  }
+  if (hadNegativeBal && currentBal > 0) {
+    unlock('comeback_kid');
   }
 
   return newBadges;
