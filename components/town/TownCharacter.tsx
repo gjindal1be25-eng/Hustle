@@ -43,9 +43,9 @@ export function TownCharacter({
   const isAltStep = walkStep % 2 === 1;
 
   // Juice: Squash & Stretch and Stride Bob
-  const bobY = isWalking ? (isAltStep ? -2.2 : 0) : Math.sin(idleTick * 2) * 0.8;
-  const squashX = isWalking ? (isAltStep ? 0.94 : 1.05) : 1;
-  const stretchY = isWalking ? (isAltStep ? 1.06 : 0.95) : (1 + Math.sin(idleTick * 2) * 0.02);
+  const bobY = isWalking ? (isAltStep ? -1.5 : 0) : Math.sin(idleTick * 2) * 0.6;
+  const squashX = isWalking ? (isAltStep ? 0.96 : 1.03) : 1;
+  const stretchY = isWalking ? (isAltStep ? 1.04 : 0.97) : (1 + Math.sin(idleTick * 2) * 0.015);
 
   // Turn lean tilt: subtle forward lean when running
   const leanAngle = isWalking ? (facing === 'left' ? -4.5 : 4.5) : 0;
@@ -107,11 +107,9 @@ export function TownCharacter({
 
       {/* Character Figure scaled 1.5x with feet pinned to ground */}
       <g
-        transform={`scale(${facing === 'left' ? -1.5 : 1.5}, 1.5) rotate(${leanAngle}) scale(${squashX}, ${stretchY}) translate(-8, -22)`}
+        transform={`scale(${facing === 'left' ? -1.5 : 1.5}, 1.5) rotate(${leanAngle}) scale(${squashX}, ${stretchY}) translate(0, ${bobY}) translate(-8, -22)`}
       >
-        {/* Head Bob / Walk Stride Offset */}
-        <g transform={`translate(0, ${bobY})`}>
-          {/* Hair Top & Cap */}
+        {/* Hair Top & Cap */}
           <rect x="4" y="1" width="8" height="3" fill={hairColor} />
           <rect x="3" y="2" width="10" height="2" fill={hairColor} />
           <rect x="3" y="4" width="2" height="3" fill={hairColor} />
@@ -224,7 +222,9 @@ export function TownCharacter({
               <rect x="12" y="13" width="2" height="2" fill={skin} />
             </g>
           )}
-        </g>
+
+        {/* Waistband connecting torso directly to legs seamlessly */}
+        <rect x="4" y="14" width="8" height="2" fill={trousers} />
 
         {/* Legs & Shoes with Walking Stride */}
         {isWalking ? (
