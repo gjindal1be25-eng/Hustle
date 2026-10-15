@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
+import { PixelButton } from '@/components/ui/PixelButton';
 import { RpgTextBox } from '@/components/ui/RpgTextBox';
 import { HudBar } from '@/components/ui/HudBar';
 import { BADGE_DEFINITIONS } from '@/lib/constants';
@@ -17,19 +19,13 @@ import {
 export default function TownHallPage() {
   const {
     state,
-    balance,
     netSavings,
     avgMonthlyIncome,
     savedMonths,
-    budgetStatuses,
     insightTips,
   } = useGame();
 
-  const [activeTab, setActiveTab] = useState<'summary' | 'recap'>('summary');
-  const [openDonut, setOpenDonut] = useState(true);
-  const [openMonths, setOpenMonths] = useState(true);
-  const [openBudgets, setOpenBudgets] = useState(true);
-  const [openTips, setOpenTips] = useState(true);
+  const [activeTab, setActiveTab] = useState<'analytics' | 'recap'>('analytics');
   const [showAllTransactions, setShowAllTransactions] = useState(false);
 
   const today = getTodayISO();
@@ -86,7 +82,7 @@ export default function TownHallPage() {
         if (t.type === 'expense') exp += t.amount;
       }
     }
-    const blockSize = 5000; // ₹5,000 per block
+    const blockSize = 5000;
     return {
       month: m,
       inc,
@@ -96,9 +92,8 @@ export default function TownHallPage() {
     };
   });
 
-  // Category donut segments calculation
   const palette = ['#2A9D8F', '#E76F51', '#E9C46A', '#457B9D', '#9B5DE5', '#F15BB5', '#00BBF9'];
-  const circumference = 2 * Math.PI * 30; // r = 30
+  const circumference = 2 * Math.PI * 30;
   let accumulatedPercent = 0;
 
   // Monthly transactions for recap
@@ -109,475 +104,333 @@ export default function TownHallPage() {
 
   const displayedTransactions = showAllTransactions
     ? monthTransactions
-    : monthTransactions.slice(0, 5);
+    : monthTransactions.slice(0, 3);
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen bg-[#1B1B1F]">
       <HudBar />
 
-      <div className="w-full max-w-[720px] px-3 sm:px-6 py-6 space-y-4 flex-1">
+      <div className="w-full max-w-[720px] px-3 sm:px-4 py-4 space-y-4 flex-1">
         <WoodFrame
           title="TOWN HALL SUMMARY"
           subtitle="Financial diagnostics, civic balance, and town badges"
         >
-          <div className="space-y-4">
-            {/* Main Action (top, always visible): Four Summary Chips */}
-            <div className="bg-[#3A3F47] border-2 border-[#4B515A] p-4">
-              <span className="font-['VT323'] text-[20px] text-[#FFF4D6] block mb-2 uppercase">
-                Financial Vital Signs
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                  <span className="font-['VT323'] text-[16px] text-[#FFF4D6]/70 block uppercase">
-                    Cash Balance
-                  </span>
-                  <span
-                    className={`font-['VT323'] text-[24px] ${
-                      balance < 0 ? 'text-[#EE6A5E]' : 'text-[#79CE5E]'
-                    }`}
-                  >
-                    ₹{balance.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                  <span className="font-['VT323'] text-[16px] text-[#FFF4D6]/70 block uppercase">
-                    Net Savings
-                  </span>
-                  <span className="font-['VT323'] text-[24px] text-[#FFD95A]">
-                    ₹{netSavings.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                  <span className="font-['VT323'] text-[16px] text-[#FFF4D6]/70 block uppercase">
-                    Avg Monthly Income
-                  </span>
-                  <span className="font-['VT323'] text-[24px] text-[#FFF4D6]">
-                    ₹{avgMonthlyIncome.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
-                  <span className="font-['VT323'] text-[16px] text-[#FFF4D6]/70 block uppercase">
-                    Savings Cushion
-                  </span>
-                  <span className="font-['VT323'] text-[24px] text-[#79CE5E]">
-                    {savedMonths} mo
-                  </span>
-                </div>
+          {/* Single Calm Stone Panel with Gold Tab Underline */}
+          <StonePanel className="space-y-4">
+            {/* Top Non-redundant Financial Vital Signs (16px spacing, clean) */}
+            <div className="grid grid-cols-3 gap-2 pb-3 border-b border-[#4B515A]/60 text-center font-sans">
+              <div className="p-2 bg-[#2E333B] border border-[#4B515A]">
+                <span className="text-[11px] text-[#B4BAC4] block uppercase">Net Savings</span>
+                <span className="text-xs sm:text-sm font-bold font-mono text-[#FFD95A]">
+                  ₹{netSavings.toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="p-2 bg-[#2E333B] border border-[#4B515A]">
+                <span className="text-[11px] text-[#B4BAC4] block uppercase">Avg Income</span>
+                <span className="text-xs sm:text-sm font-bold font-mono text-[#FFF4D6]">
+                  ₹{avgMonthlyIncome.toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="p-2 bg-[#2E333B] border border-[#4B515A]">
+                <span className="text-[11px] text-[#B4BAC4] block uppercase">Cushion</span>
+                <span className="text-xs sm:text-sm font-bold font-mono text-[#79CE5E]">
+                  {savedMonths} mos
+                </span>
               </div>
             </div>
 
-            {/* Two Tabs: Summary and Recap & Badges */}
-            <div className="flex border-b-2 border-[#4B515A] gap-2 pb-2">
+            {/* Tabs with Gold Underline */}
+            <div className="flex border-b border-[#4B515A] gap-6 pb-2">
               <button
                 type="button"
-                onClick={() => setActiveTab('summary')}
-                className={`px-4 py-2 font-['Press_Start_2P'] text-[14px] cursor-pointer transition-colors border-2 ${
-                  activeTab === 'summary'
-                    ? 'bg-[#382E25] text-[#FFD95A] border-[#FFD95A]'
-                    : 'bg-[#2A231D] text-[#FFF4D6] border-[#54433A] hover:bg-[#382E25]'
+                onClick={() => setActiveTab('analytics')}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
+                  activeTab === 'analytics'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
                 }`}
               >
-                Summary
+                Analytics & Spending
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('recap')}
-                className={`px-4 py-2 font-['Press_Start_2P'] text-[14px] cursor-pointer transition-colors border-2 ${
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
                   activeTab === 'recap'
-                    ? 'bg-[#382E25] text-[#FFD95A] border-[#FFD95A]'
-                    : 'bg-[#2A231D] text-[#FFF4D6] border-[#54433A] hover:bg-[#382E25]'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
                 }`}
               >
-                Recap and Badges
+                Recap & Badges ({state.badges.length})
               </button>
             </div>
 
-            {/* Tab 1: Summary */}
-            {activeTab === 'summary' && (
-              <div className="space-y-4">
-                {/* 1. Category Donut Panel */}
-                <StonePanel>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDonut(!openDonut)}
-                    className="w-full flex items-center justify-between text-left cursor-pointer"
-                  >
-                    <span className="font-['VT323'] text-[22px] text-[#FFF4D6]">
-                      Expense Distribution Donut ({currentMonth})
-                    </span>
-                    <span className="font-['VT323'] text-[20px] text-[#FFD95A]">
-                      {openDonut ? '▼' : '▶'}
-                    </span>
-                  </button>
+            {/* Tab 1: Analytics & Spending */}
+            {activeTab === 'analytics' && (
+              <div className="space-y-4 font-sans text-xs sm:text-sm">
+                {/* 1. Needs vs Wants 30% Rule */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[#2A9D8F] font-bold">Needs: {needsShare}%</span>
+                    <span className="text-[#B4BAC4]">Target: Wants &le; 30%</span>
+                    <span className="text-[#E76F51] font-bold">Wants: {wantsShare}%</span>
+                  </div>
+                  <div className="w-full h-3 bg-[#1B1B1F] border border-[#4B515A] flex overflow-hidden">
+                    <div className="h-full bg-[#2A9D8F] transition-all" style={{ width: `${needsShare}%` }} />
+                    <div className="h-full bg-[#E76F51] transition-all" style={{ width: `${wantsShare}%` }} />
+                  </div>
+                </div>
 
-                  {openDonut && (
-                    <div className="mt-4 pt-4 border-t border-[#4B515A]">
-                      {categorySplit.length === 0 ? (
-                        <p className="font-['VT323'] text-[20px] text-[#FFF4D6]/70 italic">
-                          No expense records found for {currentMonth}.
-                        </p>
-                      ) : (
-                        <div className="flex flex-col sm:flex-row items-center gap-6">
-                          {/* SVG Donut */}
-                          <div className="relative w-36 h-36 flex-shrink-0">
-                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                {/* 2. Expense Distribution Donut & Split */}
+                <div className="space-y-2 pt-2 border-t border-[#4B515A]/60">
+                  <span className="text-xs font-bold text-[#FFD95A] uppercase tracking-wider block">
+                    Expense Distribution ({currentMonth})
+                  </span>
+
+                  {categorySplit.length === 0 ? (
+                    <p className="text-center italic py-2 text-xs text-[#B4BAC4]">
+                      No expense records recorded for {currentMonth}.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      {/* SVG Donut */}
+                      <div className="relative w-28 h-28 flex-shrink-0">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="30" fill="transparent" stroke="#25282E" strokeWidth="16" />
+                          {categorySplit.map((c, idx) => {
+                            const strokeLength = (c.pct / 100) * circumference;
+                            const strokeOffset = -((accumulatedPercent / 100) * circumference);
+                            accumulatedPercent += c.pct;
+                            return (
                               <circle
+                                key={c.name}
                                 cx="50"
                                 cy="50"
                                 r="30"
                                 fill="transparent"
-                                stroke="#25282E"
+                                stroke={palette[idx % palette.length]}
                                 strokeWidth="16"
+                                strokeDasharray={`${strokeLength} ${circumference}`}
+                                strokeDashoffset={strokeOffset}
                               />
-                              {categorySplit.map((c, idx) => {
-                                const strokeLength = (c.pct / 100) * circumference;
-                                const strokeOffset = -((accumulatedPercent / 100) * circumference);
-                                accumulatedPercent += c.pct;
-                                return (
-                                  <circle
-                                    key={c.name}
-                                    cx="50"
-                                    cy="50"
-                                    r="30"
-                                    fill="transparent"
-                                    stroke={palette[idx % palette.length]}
-                                    strokeWidth="16"
-                                    strokeDasharray={`${strokeLength} ${circumference}`}
-                                    strokeDashoffset={strokeOffset}
-                                  />
-                                );
-                              })}
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                              <span className="font-['VT323'] text-[16px] text-[#FFF4D6]/70">TOTAL</span>
-                              <span className="font-['VT323'] text-[20px] text-[#FFD95A]">₹{totalMonthExpense}</span>
-                            </div>
-                          </div>
-
-                          {/* Legend */}
-                          <div className="flex-1 w-full space-y-2">
-                            {categorySplit.map((c, idx) => (
-                              <div key={c.name} className="flex items-center justify-between font-['VT323'] text-[20px]">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className="w-3.5 h-3.5 inline-block"
-                                    style={{ backgroundColor: palette[idx % palette.length] }}
-                                  />
-                                  <span className="text-[#FFF4D6]">{c.name}</span>
-                                </div>
-                                <span className="text-[#FFD95A]">
-                                  ₹{c.amount.toLocaleString('en-IN')} ({c.pct}%)
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                            );
+                          })}
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-[10px] text-[#B4BAC4]">TOTAL</span>
+                          <span className="text-xs font-bold font-mono text-[#FFD95A]">₹{totalMonthExpense}</span>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </StonePanel>
-
-                {/* 2. Month Bars Panel */}
-                <StonePanel>
-                  <button
-                    type="button"
-                    onClick={() => setOpenMonths(!openMonths)}
-                    className="w-full flex items-center justify-between text-left cursor-pointer"
-                  >
-                    <span className="font-['VT323'] text-[22px] text-[#FFF4D6]">
-                      Income vs Expenses by Month (Stack Bars)
-                    </span>
-                    <span className="font-['VT323'] text-[20px] text-[#FFD95A]">
-                      {openMonths ? '▼' : '▶'}
-                    </span>
-                  </button>
-
-                  {openMonths && (
-                    <div className="mt-4 pt-4 border-t border-[#4B515A] space-y-3">
-                      <p className="font-['VT323'] text-[18px] text-[#FFF4D6]/70">
-                        1 block = ₹5,000. Green = Inflow (+₹), Red = Outflow (-₹).
-                      </p>
-
-                      {monthBlocks.length === 0 ? (
-                        <p className="font-['VT323'] text-[20px] text-[#FFF4D6]/70 italic py-2">
-                          No transactions across months logged yet.
-                        </p>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {monthBlocks.map((mb) => (
-                            <div
-                              key={mb.month}
-                              className="p-3 bg-[#2E333B] border border-[#4B515A] text-center space-y-2"
-                            >
-                              <span className="font-['VT323'] text-[20px] text-[#FFD95A] block">
-                                {mb.month}
-                              </span>
-
-                              <div className="flex items-end justify-center gap-3 h-32 border-b border-[#4B515A] pb-2">
-                                <div className="flex flex-col-reverse gap-1 items-center">
-                                  {Array.from({ length: mb.incBlocks }).map((_, i) => (
-                                    <div
-                                      key={i}
-                                      className="w-6 h-2.5 bg-[#5DB84A] border border-[#79CE5E]"
-                                      title="₹5,000 Income"
-                                    />
-                                  ))}
-                                  <span className="font-['VT323'] text-[16px] text-[#79CE5E]">
-                                    +₹{(mb.inc / 1000).toFixed(0)}k
-                                  </span>
-                                </div>
-
-                                <div className="flex flex-col-reverse gap-1 items-center">
-                                  {Array.from({ length: mb.expBlocks }).map((_, i) => (
-                                    <div
-                                      key={i}
-                                      className="w-6 h-2.5 bg-[#B23B3B] border border-[#EE6A5E]"
-                                      title="₹5,000 Expense"
-                                    />
-                                  ))}
-                                  <span className="font-['VT323'] text-[16px] text-[#EE6A5E]">
-                                    -₹{(mb.exp / 1000).toFixed(0)}k
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </StonePanel>
-
-                {/* 3. Needs vs Wants & Budget Bars Panel */}
-                <StonePanel>
-                  <button
-                    type="button"
-                    onClick={() => setOpenBudgets(!openBudgets)}
-                    className="w-full flex items-center justify-between text-left cursor-pointer"
-                  >
-                    <span className="font-['VT323'] text-[22px] text-[#FFF4D6]">
-                      Needs vs. Wants & Budget Limits
-                    </span>
-                    <span className="font-['VT323'] text-[20px] text-[#FFD95A]">
-                      {openBudgets ? '▼' : '▶'}
-                    </span>
-                  </button>
-
-                  {openBudgets && (
-                    <div className="mt-4 pt-4 border-t border-[#4B515A] space-y-4">
-                      {/* Needs vs Wants Bar */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between font-['VT323'] text-[20px]">
-                          <span className="text-[#2A9D8F]">Needs: {needsShare}%</span>
-                          <span className="text-[#E76F51]">Wants: {wantsShare}%</span>
-                        </div>
-                        <div className="w-full h-5 bg-[#1B1B1F] border border-[#4B515A] flex overflow-hidden">
-                          <div
-                            className="h-full bg-[#2A9D8F] flex items-center justify-center font-['VT323'] text-[16px] text-white"
-                            style={{ width: `${needsShare}%` }}
-                          >
-                            {needsShare > 15 ? `${needsShare}%` : ''}
-                          </div>
-                          <div
-                            className="h-full bg-[#E76F51] flex items-center justify-center font-['VT323'] text-[16px] text-white"
-                            style={{ width: `${wantsShare}%` }}
-                          >
-                            {wantsShare > 15 ? `${wantsShare}%` : ''}
-                          </div>
-                        </div>
-                        <p className="font-['VT323'] text-[18px] text-[#FFF4D6]/70">
-                          Rule: Wants should stay at or below 30% of monthly spending.
-                        </p>
                       </div>
 
-                      {/* Category Budget Bars */}
-                      <div className="space-y-3 pt-2 border-t border-[#4B515A]">
-                        <span className="font-['VT323'] text-[20px] text-[#FFD95A] block">
-                          Category Budget Progress
-                        </span>
-                        {budgetStatuses.map((b) => {
-                          const barColor =
-                            b.status === 'danger'
-                              ? 'bg-[#EE6A5E]'
-                              : b.status === 'warning'
-                              ? 'bg-[#FFD95A]'
-                              : 'bg-[#79CE5E]';
-                          return (
-                            <div key={b.category.id} className="space-y-1">
-                              <div className="flex justify-between font-['VT323'] text-[18px]">
-                                <span className="text-[#FFF4D6]">{b.category.name}</span>
-                                <span className="text-[#FFF4D6]">
-                                  ₹{b.spent.toLocaleString('en-IN')} / ₹{(b.category.monthlyLimit || 0).toLocaleString('en-IN')} ({(b.pct * 100).toFixed(0)}%)
-                                </span>
-                              </div>
-                              <div className="w-full h-3 bg-[#1B1B1F] border border-[#4B515A] overflow-hidden">
-                                <div
-                                  className={`h-full ${barColor}`}
-                                  style={{ width: `${Math.min(100, b.pct * 100)}%` }}
-                                />
-                              </div>
+                      {/* Legend */}
+                      <div className="flex-1 w-full space-y-1">
+                        {categorySplit.map((c, idx) => (
+                          <div key={c.name} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className="w-2.5 h-2.5 inline-block"
+                                style={{ backgroundColor: palette[idx % palette.length] }}
+                              />
+                              <span className="text-[#FFF4D6]">{c.name}</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </StonePanel>
-
-                {/* 4. Tips Panel (at most 3) */}
-                <StonePanel>
-                  <button
-                    type="button"
-                    onClick={() => setOpenTips(!openTips)}
-                    className="w-full flex items-center justify-between text-left cursor-pointer"
-                  >
-                    <span className="font-['VT323'] text-[22px] text-[#FFF4D6]">
-                      Financial Tips & Advisory (Top 3)
-                    </span>
-                    <span className="font-['VT323'] text-[20px] text-[#FFD95A]">
-                      {openTips ? '▼' : '▶'}
-                    </span>
-                  </button>
-
-                  {openTips && (
-                    <div className="mt-4 pt-4 border-t border-[#4B515A] space-y-2">
-                      {insightTips.length === 0 ? (
-                        <p className="font-['VT323'] text-[20px] text-[#FFF4D6]/70 italic">
-                          No alerts right now. Your spending patterns are well balanced!
-                        </p>
-                      ) : (
-                        insightTips.slice(0, 3).map((tip) => (
-                          <div
-                            key={tip.id}
-                            className="p-3 bg-[#2E333B] border-l-4 border-[#FFD95A] space-y-1 font-['VT323']"
-                          >
-                            <span className="text-[20px] text-[#FFD95A] block">
-                              {tip.title}
+                            <span className="font-mono text-[#FFD95A]">
+                              ₹{c.amount.toLocaleString('en-IN')} ({c.pct}%)
                             </span>
-                            <p className="text-[18px] text-[#FFF4D6]">{tip.message}</p>
                           </div>
-                        ))
-                      )}
+                        ))}
+                      </div>
                     </div>
                   )}
-                </StonePanel>
-              </div>
-            )}
+                </div>
 
-            {/* Tab 2: Recap and Badges */}
-            {activeTab === 'recap' && (
-              <div className="space-y-4">
-                {/* Monthly Recap Box */}
-                <StonePanel>
-                  <span className="font-['VT323'] text-[22px] text-[#FFD95A] block mb-2">
-                    Monthly Recap ({currentMonth})
-                  </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                    <div className="p-2 bg-[#2E333B] border border-[#4B515A] text-center font-['VT323']">
-                      <span className="text-[16px] text-[#FFF4D6]/70 block">INFLOW</span>
-                      <span className="text-[20px] text-[#79CE5E]">₹{totalMonthIncome.toLocaleString('en-IN')}</span>
+                {/* 3. Monthly Stack Bars (Last 3 Months) */}
+                {monthBlocks.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-[#4B515A]/60">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-[#FFD95A] uppercase tracking-wider">
+                        Cash Flow History (1 Block = ₹5k)
+                      </span>
+                      <span className="text-[11px] text-[#B4BAC4]">Green = Inflow · Red = Outflow</span>
                     </div>
-                    <div className="p-2 bg-[#2E333B] border border-[#4B515A] text-center font-['VT323']">
-                      <span className="text-[16px] text-[#FFF4D6]/70 block">OUTFLOW</span>
-                      <span className="text-[20px] text-[#EE6A5E]">₹{totalMonthExpense.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="p-2 bg-[#2E333B] border border-[#4B515A] text-center font-['VT323']">
-                      <span className="text-[16px] text-[#FFF4D6]/70 block">NET SAVED</span>
-                      <span className="text-[20px] text-[#FFD95A]">₹{(totalMonthIncome - totalMonthExpense).toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="p-2 bg-[#2E333B] border border-[#4B515A] text-center font-['VT323']">
-                      <span className="text-[16px] text-[#FFF4D6]/70 block">SAVINGS RATE</span>
-                      <span className="text-[20px] text-[#79CE5E]">{savingsRate}%</span>
+
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {monthBlocks.map((mb) => (
+                        <div key={mb.month} className="p-2 bg-[#2E333B] border border-[#4B515A] space-y-1">
+                          <span className="text-xs font-bold text-[#FFD95A] block">{mb.month}</span>
+                          <div className="flex items-end justify-center gap-2 h-20 border-b border-[#4B515A]/60 pb-1">
+                            <div className="flex flex-col-reverse gap-0.5 items-center">
+                              {Array.from({ length: Math.min(6, mb.incBlocks) }).map((_, i) => (
+                                <div key={i} className="w-4 h-2 bg-[#5DB84A]" />
+                              ))}
+                              <span className="text-[10px] font-mono text-[#79CE5E]">
+                                +₹{(mb.inc / 1000).toFixed(0)}k
+                              </span>
+                            </div>
+                            <div className="flex flex-col-reverse gap-0.5 items-center">
+                              {Array.from({ length: Math.min(6, mb.expBlocks) }).map((_, i) => (
+                                <div key={i} className="w-4 h-2 bg-[#EE6A5E]" />
+                              ))}
+                              <span className="text-[10px] font-mono text-[#EE6A5E]">
+                                -₹{(mb.exp / 1000).toFixed(0)}k
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                )}
 
-                  {/* 5 Latest transactions in recap */}
-                  <span className="font-['VT323'] text-[20px] text-[#FFF4D6] block mb-1">
-                    Month Transactions
+                {/* 4. Insight Tips (Top 3) */}
+                <div className="space-y-2 pt-2 border-t border-[#4B515A]/60">
+                  <span className="text-xs font-bold text-[#FFD95A] uppercase tracking-wider block">
+                    Top Advisory Insights
                   </span>
-                  {monthTransactions.length === 0 ? (
-                    <p className="font-['VT323'] text-[18px] text-[#FFF4D6]/70 italic">
-                      No transactions recorded this month.
+                  {insightTips.length === 0 ? (
+                    <p className="text-center italic py-2 text-xs text-[#79CE5E]">
+                      All financial indicators are healthy and on track!
                     </p>
                   ) : (
                     <div className="space-y-1.5">
+                      {insightTips.slice(0, 3).map((tip) => (
+                        <div key={tip.id} className="p-2 bg-[#2E333B] border-l-2 border-[#FFD95A] text-xs space-y-0.5">
+                          <strong className="text-[#FFD95A] block">{tip.title}</strong>
+                          <p className="text-[#FFF4D6] opacity-90">{tip.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Exactly One Primary Action Button per screen in solid gold */}
+                <div className="pt-2">
+                  <Link href="/" className="block">
+                    <PixelButton variant="primary" size="md" fullWidth>
+                      Return to Town Map
+                    </PixelButton>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Monthly Recap & Badges */}
+            {activeTab === 'recap' && (
+              <div className="space-y-4 font-sans text-xs sm:text-sm">
+                {/* Monthly Recap Metrics */}
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div className="p-2 bg-[#2E333B] border border-[#4B515A]">
+                    <span className="text-[10px] text-[#B4BAC4] block uppercase">Inflow</span>
+                    <strong className="font-mono text-xs sm:text-sm text-[#79CE5E] block">
+                      +₹{totalMonthIncome.toLocaleString('en-IN')}
+                    </strong>
+                  </div>
+                  <div className="p-2 bg-[#2E333B] border border-[#4B515A]">
+                    <span className="text-[10px] text-[#B4BAC4] block uppercase">Outflow</span>
+                    <strong className="font-mono text-xs sm:text-sm text-[#EE6A5E] block">
+                      -₹{totalMonthExpense.toLocaleString('en-IN')}
+                    </strong>
+                  </div>
+                  <div className="p-2 bg-[#2E333B] border border-[#4B515A]">
+                    <span className="text-[10px] text-[#B4BAC4] block uppercase">Net Saved</span>
+                    <strong className="font-mono text-xs sm:text-sm text-[#FFD95A] block">
+                      ₹{(totalMonthIncome - totalMonthExpense).toLocaleString('en-IN')}
+                    </strong>
+                  </div>
+                  <div className="p-2 bg-[#2E333B] border border-[#4B515A]">
+                    <span className="text-[10px] text-[#B4BAC4] block uppercase">Rate</span>
+                    <strong className="font-mono text-xs sm:text-sm text-[#79CE5E] block">
+                      {savingsRate}%
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Transactions in Month (Last 3 items + See all link) */}
+                <div className="space-y-2 pt-2 border-t border-[#4B515A]/60">
+                  <div className="flex justify-between items-center pb-1">
+                    <span className="text-xs font-bold text-[#FFD95A] uppercase tracking-wider">
+                      Recent Activity ({currentMonth})
+                    </span>
+                    {monthTransactions.length > 3 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTransactions(!showAllTransactions)}
+                        className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline cursor-pointer"
+                      >
+                        {showAllTransactions ? 'Show latest 3' : `See all (${monthTransactions.length})`}
+                      </button>
+                    )}
+                  </div>
+
+                  {monthTransactions.length === 0 ? (
+                    <p className="text-center italic py-2 text-xs text-[#B4BAC4]">
+                      No transactions recorded this month.
+                    </p>
+                  ) : (
+                    <div className="space-y-1">
                       {displayedTransactions.map((t) => (
                         <div
                           key={t.id}
-                          className="flex items-center justify-between p-2 bg-[#2E333B] border border-[#4B515A] font-['VT323'] text-[18px]"
+                          className="flex items-center justify-between p-2 bg-[#2E333B] border border-[#4B515A] text-xs"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="text-[#FFF4D6]/70">{t.date}</span>
+                            <span className="text-[#B4BAC4] font-mono text-[11px]">{t.date}</span>
                             <span className="text-[#FFF4D6]">{t.note || t.categoryId || t.type}</span>
                           </div>
-                          <span className={t.type === 'income' ? 'text-[#79CE5E]' : 'text-[#EE6A5E]'}>
+                          <span className={`font-mono font-bold ${t.type === 'income' ? 'text-[#79CE5E]' : 'text-[#EE6A5E]'}`}>
                             {t.type === 'income' ? '+' : '-'}₹{t.amount.toLocaleString('en-IN')}
                           </span>
                         </div>
                       ))}
-
-                      {monthTransactions.length > 5 && (
-                        <div className="pt-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => setShowAllTransactions(!showAllTransactions)}
-                            className="font-['VT323'] text-[18px] text-[#FFD95A] underline hover:text-[#FFE885] cursor-pointer"
-                          >
-                            {showAllTransactions ? 'Show less' : `Show all (${monthTransactions.length} items)`}
-                          </button>
-                        </div>
-                      )}
                     </div>
                   )}
-                </StonePanel>
+                </div>
 
-                {/* Badges Shelf */}
-                <StonePanel>
-                  <span className="font-['VT323'] text-[22px] text-[#FFD95A] block mb-3">
-                    Town Badges Shelf ({state.badges.length}/{BADGE_DEFINITIONS.length})
+                {/* Town Badges Shelf */}
+                <div className="space-y-2 pt-2 border-t border-[#4B515A]/60">
+                  <span className="text-xs font-bold text-[#FFD95A] uppercase tracking-wider block">
+                    Town Badges ({state.badges.length}/{BADGE_DEFINITIONS.length} Earned)
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {BADGE_DEFINITIONS.map((badge) => {
                       const unlocked = state.badges.find((b) => b.id === badge.id);
                       return (
                         <div
                           key={badge.id}
-                          className={`p-3 border-2 flex items-start gap-3 ${
+                          className={`p-2.5 border flex items-start gap-2.5 ${
                             unlocked
-                              ? 'border-[#FFD95A] bg-[#2E2818]'
-                              : 'border-[#4B515A] bg-[#25282E] opacity-60'
+                              ? 'border-[#FFD95A]/60 bg-[#2E2818]'
+                              : 'border-[#4B515A]/40 bg-[#25282E] opacity-60'
                           }`}
                         >
-                          <div className="text-2xl p-2 bg-[#1B1B1F] border border-[#4B515A]">
+                          <span className="text-xl p-1 bg-[#1B1B1F] border border-[#4B515A] flex-shrink-0">
                             {badge.icon}
-                          </div>
-                          <div className="font-['VT323'] flex-1">
+                          </span>
+                          <div className="text-xs flex-1">
                             <div className="flex items-center justify-between">
-                              <span className="text-[20px] text-[#FFD95A]">{badge.name}</span>
-                              {unlocked && (
-                                <span className="text-[16px] text-[#79CE5E]">UNLOCKED</span>
-                              )}
+                              <strong className="text-[#FFD95A]">{badge.name}</strong>
+                              {unlocked && <span className="text-[#79CE5E] text-[10px] font-bold">EARNED</span>}
                             </div>
-                            <p className="text-[16px] text-[#FFF4D6]/80 leading-tight">
+                            <p className="text-[#FFF4D6] opacity-80 text-[11px] leading-tight mt-0.5">
                               {badge.description}
                             </p>
-                            {unlocked && (
-                              <span className="text-[14px] text-[#FFD95A]/70 block mt-1">
-                                Awarded on {unlocked.unlockedDate}
-                              </span>
-                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </StonePanel>
+                </div>
+
+                {/* Exactly One Primary Action Button per screen in solid gold */}
+                <div className="pt-2">
+                  <Link href="/" className="block">
+                    <PixelButton variant="primary" size="md" fullWidth>
+                      Return to Town Map
+                    </PixelButton>
+                  </Link>
+                </div>
               </div>
             )}
-          </div>
+          </StonePanel>
         </WoodFrame>
 
         {/* 96px Bottom RPG Dialogue Text Box */}

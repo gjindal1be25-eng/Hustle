@@ -16,11 +16,11 @@ export function StonePanel({
 }: StonePanelProps) {
   return (
     <section
-      className={`bg-[#3A3F47] border-2 border-[#4B515A] p-4 text-[#FFF4D6] space-y-3 font-body text-[20px] ${className}`}
+      className={`bg-[#3A3F47] border border-[#4B515A] p-4 sm:p-5 text-[#FFF4D6] space-y-4 font-sans text-sm sm:text-base ${className}`}
     >
       {title && (
-        <div className="flex items-center gap-2 pb-2 border-b border-[#4B515A]">
-          <span className="text-[14px] font-heading text-[#FFD95A] uppercase tracking-wide">
+        <div className="flex items-center justify-between pb-2 border-b border-[#4B515A]/70">
+          <span className="text-xs sm:text-sm font-heading text-[#FFD95A] uppercase tracking-wider">
             {title}
           </span>
         </div>

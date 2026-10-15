@@ -42,7 +42,7 @@ export default function StoryPage() {
     ? calculateGoalProgress(activeGoal, state.transactions, today)
     : null;
 
-  // Level progress calculation based on saved months cushion
+  // Level cushion progress
   const currentThreshold = LEVEL_THRESHOLDS.find((l) => l.level === level) || LEVEL_THRESHOLDS[0];
   const nextThreshold = LEVEL_THRESHOLDS.find((l) => l.level === level + 1);
   const minMonths = Math.max(0, currentThreshold.minSavedMonths);
@@ -54,225 +54,168 @@ export default function StoryPage() {
   // Problem categories for warning strip
   const alertCategories = budgetStatuses.filter((b) => b.status !== 'normal');
 
-  // Lessons list
+  // Lessons list (last 3 items or all)
   const allLessons = LESSONS.map((l: Lesson) => ({
     ...l,
     unlocked: state.lessonsSeen.some((s) => s.lessonId === l.id),
   }));
-  const displayedLessons = showAllLessons ? allLessons : allLessons.slice(0, 5);
+  const displayedLessons = showAllLessons ? allLessons : allLessons.slice(0, 3);
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen bg-[#1B1B1F]">
       <HudBar />
 
-      <div className="w-full max-w-[720px] px-3 sm:px-6 py-6 space-y-4 flex-1">
+      <div className="w-full max-w-[720px] px-3 sm:px-4 py-4 space-y-4 flex-1">
         <WoodFrame
           title="HOME & DIARY"
-          subtitle="Your daily story chronicle, current standing, and life events"
+          subtitle="Your daily chronicle, current life events, and story progression"
         >
-          <div className="space-y-4">
-            {/* Main Action (top, always visible): Latest Event & Why Line */}
-            <StonePanel>
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                {/* Character In Scene */}
-                <div className="flex flex-col items-center justify-center p-3 bg-[#1B1B1F] border border-[#4B515A] min-w-[110px]">
-                  <CharacterSprite
-                    hairColor={state.profile?.avatar.hairColor}
-                    outfitColor={state.profile?.avatar.outfitColor}
-                    mood={
-                      activeEvent.type === 'debt_spiral'
-                        ? 'worried'
-                        : activeEvent.type === 'stranded'
-                        ? 'sad'
-                        : activeEvent.type === 'goal_reached'
-                        ? 'celebrating'
-                        : 'happy'
-                    }
-                    size={64}
-                    animate={true}
-                  />
-                  <span className="font-['VT323'] text-[20px] text-[#FFD95A] mt-1">
-                    {name}
-                  </span>
-                  <span className="font-['VT323'] text-[16px] text-[#FFF4D6]/70">
-                    {levelTitle} (L{level})
-                  </span>
-                </div>
-
-                {/* Event Narrative Card */}
-                <div className="flex-1 space-y-2 font-['VT323'] text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[16px] bg-[#382E25] text-[#FFD95A] px-2 py-0.5 border border-[#54433A] uppercase">
-                      Scene: {activeEvent.scene}
-                    </span>
-                    <span className="text-[16px] bg-[#2E333B] text-[#FFF4D6] px-2 py-0.5 border border-[#4B515A] uppercase">
-                      {activeEvent.type.replace('_', ' ')}
-                    </span>
-                  </div>
-
-                  <p className="text-[22px] text-[#FFF4D6] leading-tight">
-                    &ldquo;{activeEvent.eventLine}&rdquo;
-                  </p>
-
-                  <div className="p-2.5 bg-[#2E333B] border-l-4 border-[#FFD95A]">
-                    <span className="text-[18px] text-[#FFD95A] uppercase block">
-                      The &ldquo;Why&rdquo; Behind This:
-                    </span>
-                    <p className="text-[20px] text-[#FFF4D6]">
-                      {activeEvent.whyLine}
-                    </p>
-                  </div>
-
-                  {activeEvent.recoveryPlan && (
-                    <div className="p-2 bg-[#3A2222] border border-[#EE6A5E] space-y-1">
-                      <span className="text-[18px] text-[#EE6A5E] block uppercase">
-                        Recommended Recovery Steps:
-                      </span>
-                      {activeEvent.recoveryPlan.map((step, idx) => (
-                        <p key={idx} className="text-[16px] text-[#FFF4D6]">
-                          ▶ {step}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </StonePanel>
-
-            {/* Two Tabs: Overview & Lessons */}
-            <div className="flex border-b-2 border-[#4B515A] gap-2 pb-2">
+          {/* Single Calm Stone Panel with Gold Tab Underline */}
+          <StonePanel className="space-y-4">
+            {/* Tabs with Gold Underline */}
+            <div className="flex border-b border-[#4B515A] gap-6 pb-2">
               <button
                 type="button"
                 onClick={() => setActiveTab('overview')}
-                className={`px-4 py-2 font-['Press_Start_2P'] text-[14px] cursor-pointer transition-colors border-2 ${
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
                   activeTab === 'overview'
-                    ? 'bg-[#382E25] text-[#FFD95A] border-[#FFD95A]'
-                    : 'bg-[#2A231D] text-[#FFF4D6] border-[#54433A] hover:bg-[#382E25]'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
                 }`}
               >
-                Overview
+                Story & Goals
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('lessons')}
-                className={`px-4 py-2 font-['Press_Start_2P'] text-[14px] cursor-pointer transition-colors border-2 ${
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
                   activeTab === 'lessons'
-                    ? 'bg-[#382E25] text-[#FFD95A] border-[#FFD95A]'
-                    : 'bg-[#2A231D] text-[#FFF4D6] border-[#54433A] hover:bg-[#382E25]'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
                 }`}
               >
-                Lessons
+                Lessons ({allLessons.filter((l) => l.unlocked).length} Unlocked)
               </button>
             </div>
 
-            {/* Tab 1: Overview (level bar, goal bar, budget alerts) */}
+            {/* Tab 1: Story Overview */}
             {activeTab === 'overview' && (
-              <div className="space-y-4">
-                {/* Level Progress Bar */}
-                <StonePanel>
-                  <div className="space-y-2 font-['VT323']">
-                    <div className="flex justify-between items-center text-[20px]">
-                      <span className="text-[#FFF4D6]">
-                        Town Level {level}: {levelTitle}
-                      </span>
-                      <span className="text-[#FFD95A]">{levelPct}% to next level</span>
-                    </div>
-
-                    <div className="w-full h-4 bg-[#1B1B1F] border border-[#4B515A] overflow-hidden">
-                      <div
-                        className="h-full bg-[#79CE5E] transition-all"
-                        style={{ width: `${levelPct}%` }}
-                      />
-                    </div>
-
-                    <div className="flex justify-between text-[16px] text-[#FFF4D6]/70">
-                      <span>Savings Cushion: {savedMonths} mos</span>
-                      <span>
-                        {nextThreshold
-                          ? `Next Tier: ${nextThreshold.minSavedMonths} mos cushion`
-                          : 'Max Tier Achieved'}
-                      </span>
-                    </div>
+              <div className="space-y-4 font-sans text-xs sm:text-sm">
+                {/* Current Narrative Scene & Why Line */}
+                <div className="flex items-start gap-4 pb-3 border-b border-[#4B515A]/60">
+                  <div className="flex-shrink-0 flex flex-col items-center p-2 bg-[#1B1B1F] border border-[#4B515A]">
+                    <CharacterSprite
+                      hairColor={state.profile?.avatar.hairColor}
+                      outfitColor={state.profile?.avatar.outfitColor}
+                      mood={
+                        activeEvent.type === 'debt_spiral'
+                          ? 'worried'
+                          : activeEvent.type === 'stranded'
+                          ? 'sad'
+                          : activeEvent.type === 'goal_reached'
+                          ? 'celebrating'
+                          : 'happy'
+                      }
+                      size={48}
+                      animate={true}
+                    />
+                    <span className="text-[11px] font-bold text-[#FFD95A] mt-1">{name}</span>
                   </div>
-                </StonePanel>
 
-                {/* Active Goal Progress Bar */}
-                <StonePanel>
-                  <div className="space-y-2 font-['VT323']">
-                    <span className="text-[20px] text-[#FFD95A] block">
-                      Active Savings Goal: {activeGoal ? activeGoal.name : 'No Active Goal'}
-                    </span>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] bg-[#382E25] text-[#FFD95A] px-2 py-0.5 border border-[#54433A] uppercase font-bold">
+                        Scene: {activeEvent.scene}
+                      </span>
+                      <span className="text-[11px] bg-[#2E333B] text-[#FFF4D6] px-2 py-0.5 border border-[#4B515A] uppercase">
+                        {activeEvent.type.replace('_', ' ')}
+                      </span>
+                    </div>
 
-                    {activeGoal && goalProgress ? (
-                      <>
-                        <div className="flex justify-between text-[18px]">
-                          <span className="text-[#FFF4D6]">
-                            Progress: ₹{goalProgress.progress.toLocaleString('en-IN')} / ₹{activeGoal.targetAmount.toLocaleString('en-IN')}
-                          </span>
-                          <span className="text-[#FFD95A]">{goalProgress.pct}%</span>
-                        </div>
+                    <p className="text-sm sm:text-base text-[#FFF4D6] leading-snug">
+                      &ldquo;{activeEvent.eventLine}&rdquo;
+                    </p>
 
-                        <div className="w-full h-4 bg-[#1B1B1F] border border-[#4B515A] overflow-hidden">
-                          <div
-                            className="h-full bg-[#FFD95A] transition-all"
-                            style={{ width: `${goalProgress.pct}%` }}
-                          />
-                        </div>
+                    <div className="p-2 bg-[#2E333B] border-l-2 border-[#FFD95A] text-xs">
+                      <span className="text-[#FFD95A] font-bold block uppercase text-[10px]">
+                        The Why:
+                      </span>
+                      <p className="text-[#FFF4D6] opacity-90">{activeEvent.whyLine}</p>
+                    </div>
 
-                        <div className="flex justify-between text-[16px] text-[#FFF4D6]/70">
-                          <span>Started on: {activeGoal.createdDate}</span>
-                          <span>Target: ₹{activeGoal.targetAmount.toLocaleString('en-IN')}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-[18px] text-[#FFF4D6]/70 italic">
-                        Visit the Vault to establish a new savings goal.
-                      </p>
+                    {activeEvent.recoveryPlan && (
+                      <div className="p-2 bg-[#3A2222] border border-[#EE6A5E] space-y-0.5 text-xs text-[#FFF4D6]">
+                        <span className="text-[#EE6A5E] block font-bold uppercase text-[10px]">
+                          Recovery Steps:
+                        </span>
+                        {activeEvent.recoveryPlan.map((step, idx) => (
+                          <p key={idx}>▶ {step}</p>
+                        ))}
+                      </div>
                     )}
                   </div>
-                </StonePanel>
+                </div>
 
-                {/* Budget Alerts */}
-                <StonePanel>
-                  <span className="font-['VT323'] text-[20px] text-[#FFD95A] block mb-2">
-                    Budget Alerts & Monitoring
-                  </span>
-                  {alertCategories.length === 0 ? (
-                    <p className="font-['VT323'] text-[18px] text-[#79CE5E]">
-                      All categories are safely within their monthly limits.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
+                {/* Level Cushion & Active Goal (16px spacing, clean single column) */}
+                <div className="space-y-3">
+                  {/* Level Progress */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[#FFF4D6]">
+                        {levelTitle} (Level {level})
+                      </span>
+                      <span className="text-[#FFD95A] font-bold">{levelPct}% to next rank</span>
+                    </div>
+                    <div className="w-full h-2 bg-[#1B1B1F] border border-[#4B515A] overflow-hidden">
+                      <div className="h-full bg-[#5DB84A] transition-all" style={{ width: `${levelPct}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Active Goal */}
+                  <div className="space-y-1 pt-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[#FFD95A] font-bold">
+                        Target: {activeGoal ? activeGoal.name : 'No Active Goal'}
+                      </span>
+                      {activeGoal && goalProgress && (
+                        <span className="text-[#B4BAC4]">
+                          ₹{goalProgress.progress.toLocaleString('en-IN')} / ₹{activeGoal.targetAmount.toLocaleString('en-IN')} ({goalProgress.pct}%)
+                        </span>
+                      )}
+                    </div>
+                    {activeGoal && goalProgress ? (
+                      <div className="w-full h-2 bg-[#1B1B1F] border border-[#4B515A] overflow-hidden">
+                        <div className="h-full bg-[#FFD95A] transition-all" style={{ width: `${goalProgress.pct}%` }} />
+                      </div>
+                    ) : (
+                      <Link href="/vault" className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline block">
+                        Establish a goal in the Vault ➔
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Budget Alerts (if any) */}
+                  {alertCategories.length > 0 && (
+                    <div className="pt-2 border-t border-[#4B515A]/60 space-y-1.5">
+                      <span className="text-xs font-bold text-[#EE6A5E] uppercase tracking-wider block">
+                        Budget Attention Needed ({alertCategories.length})
+                      </span>
                       {alertCategories.map((b) => (
-                        <div
-                          key={b.category.id}
-                          className="p-2.5 bg-[#2E333B] border border-[#4B515A] space-y-1 font-['VT323']"
-                        >
-                          <div className="flex justify-between text-[18px]">
-                            <span className="text-[#FFF4D6]">{b.category.name}</span>
-                            <span className={b.status === 'danger' ? 'text-[#EE6A5E]' : 'text-[#FFD95A]'}>
-                              {b.status === 'danger' ? 'OVER BUDGET' : 'NEAR LIMIT'} ({(b.pct * 100).toFixed(0)}%)
-                            </span>
-                          </div>
-                          <div className="w-full h-2.5 bg-[#1B1B1F] border border-[#4B515A] overflow-hidden">
-                            <div
-                              className={`h-full ${b.status === 'danger' ? 'bg-[#EE6A5E]' : 'bg-[#FFD95A]'}`}
-                              style={{ width: `${Math.min(100, b.pct * 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-[16px] text-[#FFF4D6]/70 block">
-                            Spent ₹{b.spent.toLocaleString('en-IN')} of ₹{(b.category.monthlyLimit || 0).toLocaleString('en-IN')} limit.
+                        <div key={b.category.id} className="flex justify-between text-xs text-[#FFF4D6]">
+                          <span>{b.category.name}</span>
+                          <span className={b.status === 'danger' ? 'text-[#EE6A5E] font-bold' : 'text-[#FFD95A]'}>
+                            {b.status === 'danger' ? 'OVER BUDGET' : 'NEAR LIMIT'} ({(b.pct * 100).toFixed(0)}%)
                           </span>
                         </div>
                       ))}
                     </div>
                   )}
-                </StonePanel>
+                </div>
 
-                {/* Primary Button: Return to Town Map */}
-                <div className="pt-2 flex justify-center">
-                  <Link href="/">
-                    <PixelButton variant="primary">
+                {/* Exactly One Primary Action Button per screen in solid gold */}
+                <div className="pt-2">
+                  <Link href="/" className="block">
+                    <PixelButton variant="primary" size="md" fullWidth>
                       Return to Town Map
                     </PixelButton>
                   </Link>
@@ -280,69 +223,57 @@ export default function StoryPage() {
               </div>
             )}
 
-            {/* Tab 2: Lessons (recent lesson cards) */}
+            {/* Tab 2: Lessons (Last 3 items + See all link) */}
             {activeTab === 'lessons' && (
-              <div className="space-y-4">
-                <StonePanel>
-                  <span className="font-['VT323'] text-[20px] text-[#FFD95A] block mb-2">
-                    Recent Financial Lessons
+              <div className="space-y-4 font-sans text-xs sm:text-sm">
+                <div className="flex justify-between items-center pb-1 border-b border-[#4B515A]/60">
+                  <span className="text-xs sm:text-sm font-sans font-bold text-[#FFD95A] uppercase tracking-wider">
+                    Recent Wisdom Scrolls
                   </span>
-
-                  {allLessons.length === 0 ? (
-                    <p className="font-['VT323'] text-[18px] text-[#FFF4D6]/70 italic">
-                      No lessons logged yet. Visit the Schoolhouse to explore lessons!
-                    </p>
-                  ) : (
-                    <div className="space-y-2.5">
-                      {displayedLessons.map((lesson) => (
-                        <div
-                          key={lesson.id}
-                          className={`p-3 border-2 font-['VT323'] space-y-1 ${
-                            lesson.unlocked
-                              ? 'border-[#79CE5E] bg-[#2E333B]'
-                              : 'border-[#4B515A] bg-[#25282E]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[20px] text-[#FFD95A]">
-                              {lesson.title} ({lesson.book})
-                            </span>
-                            <span className={`text-[16px] ${lesson.unlocked ? 'text-[#79CE5E]' : 'text-[#FFF4D6]/70'}`}>
-                              {lesson.unlocked ? 'UNLOCKED' : 'LOCKED'}
-                            </span>
-                          </div>
-                          <p className="text-[18px] text-[#FFF4D6]/90">
-                            {lesson.cardText}
-                          </p>
-                        </div>
-                      ))}
-
-                      {allLessons.length > 5 && (
-                        <div className="pt-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => setShowAllLessons(!showAllLessons)}
-                            className="font-['VT323'] text-[18px] text-[#FFD95A] underline hover:text-[#FFE885] cursor-pointer"
-                          >
-                            {showAllLessons ? 'Show less' : `Show all (${allLessons.length} lessons)`}
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                  {allLessons.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllLessons(!showAllLessons)}
+                      className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline cursor-pointer"
+                    >
+                      {showAllLessons ? 'Show latest 3' : `See all (${allLessons.length})`}
+                    </button>
                   )}
-                </StonePanel>
+                </div>
 
-                {/* Primary Button: Visit School */}
-                <div className="pt-2 flex justify-center">
-                  <Link href="/school">
-                    <PixelButton variant="primary">
-                      Visit Schoolhouse
-                    </PixelButton>
+                <div className="space-y-2.5">
+                  {displayedLessons.map((lesson) => (
+                    <div
+                      key={lesson.id}
+                      className={`p-3 border text-xs sm:text-sm space-y-1 ${
+                        lesson.unlocked
+                          ? 'border-[#79CE5E] bg-[#2E333B]'
+                          : 'border-[#4B515A] bg-[#25282E] opacity-70'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <strong className="text-[#FFD95A]">
+                          {lesson.title} ({lesson.book})
+                        </strong>
+                        <span className={lesson.unlocked ? 'text-[#79CE5E] font-bold text-[11px]' : 'text-[#B4BAC4] text-[11px]'}>
+                          {lesson.unlocked ? 'UNLOCKED' : 'LOCKED'}
+                        </span>
+                      </div>
+                      <p className="text-[#FFF4D6] leading-relaxed">
+                        {lesson.cardText}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2 text-center">
+                  <Link href="/school" className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline">
+                    Visit Schoolhouse for the complete curriculum ➔
                   </Link>
                 </div>
               </div>
             )}
-          </div>
+          </StonePanel>
         </WoodFrame>
 
         {/* 96px Bottom RPG Dialogue Text Box */}

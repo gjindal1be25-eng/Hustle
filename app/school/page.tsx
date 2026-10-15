@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
+import { PixelButton } from '@/components/ui/PixelButton';
 import { RpgTextBox } from '@/components/ui/RpgTextBox';
 import { HudBar } from '@/components/ui/HudBar';
 import { LESSONS } from '@/lib/constants';
@@ -11,6 +13,7 @@ import { LESSONS } from '@/lib/constants';
 export default function SchoolPage() {
   const { state } = useGame();
   const [activeTab, setActiveTab] = useState<'unlocked' | 'locked'>('unlocked');
+  const [showAll, setShowAll] = useState(false);
 
   const unlockedLessonIds = new Set(
     state.lessonsSeen.map((l) => l.lessonId)
@@ -20,6 +23,7 @@ export default function SchoolPage() {
   const lockedLessons = LESSONS.filter((l) => !unlockedLessonIds.has(l.id));
 
   const currentLessons = activeTab === 'unlocked' ? unlockedLessons : lockedLessons;
+  const displayedLessons = showAll ? currentLessons : currentLessons.slice(0, 3);
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen bg-[#1B1B1F]">
@@ -30,86 +34,104 @@ export default function SchoolPage() {
           title="TOWN SCHOOL OF WISDOM"
           subtitle="8 Foundational financial mental models distilled from classic literature"
         >
-          <div className="space-y-4">
-            {/* Main Action (top, always visible): Curriculum status & summary */}
-            <StonePanel title="Curriculum & Progress">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-[20px]">
-                <span>
-                  Unlocked Scrolls: <strong className="text-[#FFD95A]">{unlockedLessons.length} of 8</strong>
-                </span>
-                <span className="text-xs text-[#B4BAC4]">
-                  Scrolls unlock as you experience real financial milestones in Hustle.
-                </span>
-              </div>
-            </StonePanel>
+          {/* Single Calm Stone Panel with Gold Tab Underline */}
+          <StonePanel className="space-y-4">
+            {/* Curriculum Progress Strip (16px spacing, clean) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#4B515A]/60 font-sans text-xs sm:text-sm">
+              <span className="text-[#FFF4D6]">
+                Mastery: <strong className="text-[#FFD95A] font-bold">{unlockedLessons.length} of 8 Scrolls Unlocked</strong>
+              </span>
+              <span className="text-[#B4BAC4] text-xs">
+                Scrolls unlock automatically as you experience real milestones in Hustle.
+              </span>
+            </div>
 
-            {/* Two Tabs: Tab 1: Unlocked, Tab 2: Locked */}
-            <div className="flex gap-2">
+            {/* Tabs with Gold Underline */}
+            <div className="flex border-b border-[#4B515A] gap-6 pb-2">
               <button
-                onClick={() => setActiveTab('unlocked')}
-                className={`px-4 py-2 text-[14px] font-heading cursor-pointer transition-colors ${
+                type="button"
+                onClick={() => {
+                  setActiveTab('unlocked');
+                  setShowAll(false);
+                }}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
                   activeTab === 'unlocked'
-                    ? 'bg-[#8B5E34] text-[#FFD95A] border-2 border-[#D9A05E]'
-                    : 'bg-[#5C3826] text-[#FFF4D6] border-2 border-[#8B5E34] hover:bg-[#6E442F]'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
                 }`}
               >
                 Unlocked Scrolls ({unlockedLessons.length})
               </button>
               <button
-                onClick={() => setActiveTab('locked')}
-                className={`px-4 py-2 text-[14px] font-heading cursor-pointer transition-colors ${
+                type="button"
+                onClick={() => {
+                  setActiveTab('locked');
+                  setShowAll(false);
+                }}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
                   activeTab === 'locked'
-                    ? 'bg-[#8B5E34] text-[#FFD95A] border-2 border-[#D9A05E]'
-                    : 'bg-[#5C3826] text-[#FFF4D6] border-2 border-[#8B5E34] hover:bg-[#6E442F]'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
                 }`}
               >
-                Locked Scrolls ({lockedLessons.length})
+                Locked Clues ({lockedLessons.length})
               </button>
             </div>
 
-            {/* Lesson Cards */}
-            <StonePanel title={activeTab === 'unlocked' ? 'Unlocked Wisdom' : 'Locked Scroll Clues'}>
+            {/* Lesson Cards (Last 3 items + See all link) */}
+            <div className="space-y-3 font-sans text-xs sm:text-sm">
+              <div className="flex justify-between items-center pb-1">
+                <span className="text-xs text-[#B4BAC4] uppercase tracking-wider">
+                  {activeTab === 'unlocked' ? 'Unlocked Wisdom' : 'Clues to Discover'}
+                </span>
+                {currentLessons.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAll(!showAll)}
+                    className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline cursor-pointer"
+                  >
+                    {showAll ? 'Show latest 3' : `See all (${currentLessons.length})`}
+                  </button>
+                )}
+              </div>
+
               {currentLessons.length === 0 ? (
-                <p className="text-center italic py-4 text-[#B4BAC4]">
+                <p className="text-center italic py-4 text-xs text-[#B4BAC4]">
                   {activeTab === 'unlocked'
-                    ? 'No scrolls unlocked yet. Log your first earnings or goals to unlock your first lesson!'
-                    : 'All 8 scrolls have been unlocked! You have mastered the curriculum! 🎓'}
+                    ? 'No scrolls unlocked yet. Log your first earnings or goals to unlock a scroll!'
+                    : 'All 8 scrolls have been unlocked! You have mastered the town curriculum! 🎓'}
                 </p>
               ) : (
-                <div className="space-y-3">
-                  {currentLessons.map((lesson) => {
+                <div className="space-y-2.5">
+                  {displayedLessons.map((lesson) => {
                     const isUnlocked = unlockedLessonIds.has(lesson.id);
                     return (
                       <div
                         key={lesson.id}
-                        className={`p-3.5 border border-[#4B515A] space-y-2 ${
-                          isUnlocked ? 'bg-[#2E333B]' : 'bg-[#25282E] opacity-75'
+                        className={`p-3 border space-y-1.5 ${
+                          isUnlocked ? 'border-[#4B515A] bg-[#2E333B]' : 'border-[#4B515A]/60 bg-[#25282E] opacity-75'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-2 border-b border-[#4B515A]/60 pb-1.5">
+                        <div className="flex items-start justify-between gap-2">
                           <div>
-                            <span className="text-[12px] font-heading text-[#FFD95A] uppercase block">
-                              Scroll #{lesson.id} • Inspired by &ldquo;{lesson.book}&rdquo;
+                            <span className="text-[11px] text-[#FFD95A] font-bold uppercase block">
+                              Scroll #{lesson.id} · {lesson.book}
                             </span>
-                            <strong className="text-[18px] text-[#FFF4D6] block">
+                            <strong className="text-xs sm:text-sm text-[#FFF4D6]">
                               {lesson.title}
                             </strong>
                           </div>
-                          <span className="text-xl">{isUnlocked ? '📜' : '🔒'}</span>
+                          <span className="text-base">{isUnlocked ? '📜' : '🔒'}</span>
                         </div>
 
                         {isUnlocked ? (
-                          <div className="p-2.5 bg-[#1B1B1F] border border-[#4B515A]">
-                            <p className="text-[20px] text-[#FFF4D6] leading-relaxed">
-                              &ldquo;{lesson.cardText}&rdquo;
-                            </p>
-                          </div>
+                          <p className="text-xs sm:text-sm text-[#FFF4D6] opacity-90 leading-relaxed">
+                            &ldquo;{lesson.cardText}&rdquo;
+                          </p>
                         ) : (
-                          <div className="p-2 bg-[#1B1B1F] border border-[#4B515A] text-xs text-[#B4BAC4]">
-                            <strong className="text-[#FFD95A] block mb-0.5 font-heading">
-                              How to unlock:
-                            </strong>
-                            <p className="text-[16px] text-[#FFF4D6]">{lesson.triggerHint}</p>
+                          <div className="text-xs text-[#B4BAC4]">
+                            <strong className="text-[#FFD95A] block mb-0.5">How to unlock:</strong>
+                            <p>{lesson.triggerHint}</p>
                           </div>
                         )}
                       </div>
@@ -117,8 +139,17 @@ export default function SchoolPage() {
                   })}
                 </div>
               )}
-            </StonePanel>
-          </div>
+
+              {/* Exactly One Primary Action Button per screen in solid gold */}
+              <div className="pt-2">
+                <Link href="/" className="block">
+                  <PixelButton variant="primary" size="md" fullWidth>
+                    Return to Town Map
+                  </PixelButton>
+                </Link>
+              </div>
+            </div>
+          </StonePanel>
         </WoodFrame>
 
         {/* 96px Bottom RPG Dialogue Text Box */}

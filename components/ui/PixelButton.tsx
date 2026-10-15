@@ -28,11 +28,11 @@ export function PixelButton({
   };
 
   const variantStyles = {
-    wood: 'bg-[#5C3826] text-[#FFF4D6] border-2 border-[#8B5E34] shadow-[0_3px_0_#2A180E] hover:bg-[#6E442F] active:shadow-none active:translate-y-[3px]',
-    primary: 'bg-[#8B5E34] text-[#FFD95A] border-2 border-[#D9A05E] shadow-[0_3px_0_#3B2516] hover:bg-[#A9763F] active:shadow-none active:translate-y-[3px]',
-    gold: 'bg-[#8B5E34] text-[#FFD95A] border-2 border-[#D9A05E] shadow-[0_3px_0_#3B2516] hover:bg-[#A9763F] active:shadow-none active:translate-y-[3px]',
-    stone: 'bg-[#3A3F47] text-[#FFF4D6] border-2 border-[#4B515A] shadow-[0_3px_0_#1E2024] hover:bg-[#464C56] active:shadow-none active:translate-y-[3px]',
-    danger: 'bg-[#B23B3B] text-[#FFF4D6] border-2 border-[#EE6A5E] shadow-[0_3px_0_#5E1E1E] hover:bg-[#C74343] active:shadow-none active:translate-y-[3px]',
+    wood: 'bg-[#5C3826] text-[#FFF4D6] border-2 border-[#8B5E34] shadow-[0_2px_0_#2A180E] hover:bg-[#6E442F] active:shadow-none active:translate-y-[2px]',
+    primary: 'bg-[#FFD95A] text-[#1B1B1F] font-bold border-2 border-[#D4A310] shadow-[0_2px_0_#A8820C] hover:bg-[#FFE885] active:shadow-none active:translate-y-[2px]',
+    gold: 'bg-[#FFD95A] text-[#1B1B1F] font-bold border-2 border-[#D4A310] shadow-[0_2px_0_#A8820C] hover:bg-[#FFE885] active:shadow-none active:translate-y-[2px]',
+    stone: 'bg-[#3A3F47] text-[#FFF4D6] border-2 border-[#4B515A] shadow-[0_2px_0_#1E2024] hover:bg-[#464C56] active:shadow-none active:translate-y-[2px]',
+    danger: 'bg-[#B23B3B] text-[#FFF4D6] border-2 border-[#EE6A5E] shadow-[0_2px_0_#5E1E1E] hover:bg-[#C74343] active:shadow-none active:translate-y-[2px]',
   };
 
   const disabledStyles = 'opacity-50 cursor-not-allowed pointer-events-none grayscale';

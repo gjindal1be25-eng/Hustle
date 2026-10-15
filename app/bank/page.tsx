@@ -49,15 +49,43 @@ export default function BankPage() {
       <div className="w-full max-w-[720px] px-3 sm:px-4 py-4 space-y-4 flex-1">
         <WoodFrame
           title="TOWN BANK & LOAN SIMULATOR"
-          subtitle="Explore the mathematics of debt, compound interest, and EMI sustainability"
+          subtitle="Explore debt mathematics, compound interest, and EMI sustainability"
         >
-          <div className="space-y-4">
-            {/* Main Action (top, always visible): Loan Simulator with live result */}
-            <StonePanel title="Loan EMI Simulator">
-              <div className="space-y-3">
+          {/* Single Calm Stone Panel with Gold Tab Underline */}
+          <StonePanel className="space-y-4">
+            {/* Tabs with Gold Underline */}
+            <div className="flex border-b border-[#4B515A] gap-6 pb-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('simulator')}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
+                  activeTab === 'simulator'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
+                }`}
+              >
+                Loan Simulator
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('active')}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
+                  activeTab === 'active'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
+                }`}
+              >
+                Active Loan {activeLoan ? '●' : ''}
+              </button>
+            </div>
+
+            {/* Tab 1: Loan Simulator */}
+            {activeTab === 'simulator' && (
+              <div className="space-y-4 font-sans text-xs sm:text-sm">
+                {/* 3-Field Single Row / Column Form */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <PixelInput
-                    label="Principal Borrowing (₹)"
+                    label="Principal (₹)"
                     prefix="₹"
                     type="number"
                     min="1000"
@@ -89,30 +117,30 @@ export default function BankPage() {
                   />
                 </div>
 
-                {/* One Result Card: EMI, Total Interest, Total Payable, EMI-to-income */}
-                <div className="p-3 bg-[#2E333B] border border-[#4B515A] grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                  <div>
-                    <span className="text-[12px] font-heading text-[#B4BAC4] block uppercase">Monthly EMI</span>
-                    <strong className="text-[20px] font-heading text-[#FFD95A]">
+                {/* 4-Metric Result Strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
+                  <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
+                    <span className="text-[11px] text-[#B4BAC4] block uppercase">Monthly EMI</span>
+                    <strong className="text-sm sm:text-base font-mono text-[#FFD95A] block mt-0.5">
                       ₹{simSummary.emi.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div>
-                    <span className="text-[12px] font-heading text-[#B4BAC4] block uppercase">Total Interest</span>
-                    <strong className="text-[20px] font-heading text-[#EE6A5E]">
+                  <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
+                    <span className="text-[11px] text-[#B4BAC4] block uppercase">Total Interest</span>
+                    <strong className="text-sm sm:text-base font-mono text-[#EE6A5E] block mt-0.5">
                       ₹{simSummary.totalInterest.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div>
-                    <span className="text-[12px] font-heading text-[#B4BAC4] block uppercase">Total Payable</span>
-                    <strong className="text-[20px] font-heading text-[#FFF4D6]">
+                  <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
+                    <span className="text-[11px] text-[#B4BAC4] block uppercase">Total Payable</span>
+                    <strong className="text-sm sm:text-base font-mono text-[#FFF4D6] block mt-0.5">
                       ₹{simSummary.totalPayable.toLocaleString('en-IN')}
                     </strong>
                   </div>
-                  <div>
-                    <span className="text-[12px] font-heading text-[#B4BAC4] block uppercase">EMI-to-Income</span>
+                  <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
+                    <span className="text-[11px] text-[#B4BAC4] block uppercase">EMI-to-Income</span>
                     <strong
-                      className={`text-[20px] font-heading ${
+                      className={`text-sm sm:text-base font-mono block mt-0.5 ${
                         isHighRisk ? 'text-[#EE6A5E]' : 'text-[#79CE5E]'
                       }`}
                     >
@@ -123,115 +151,111 @@ export default function BankPage() {
 
                 {/* High Debt Warning */}
                 {isHighRisk && (
-                  <div className="p-2.5 bg-[#4A2626] border border-[#EE6A5E] text-[16px] text-[#FFF4D6]">
-                    <strong className="text-[#EE6A5E] block font-heading text-[12px]">⚠️ High Debt Load Warning (&gt;40% Income)</strong>
+                  <div className="p-2.5 bg-[#3A2222] border border-[#EE6A5E] text-xs text-[#FFF4D6]">
+                    <strong className="text-[#EE6A5E] block mb-0.5">⚠️ High Debt Load Warning (&gt;40% Income)</strong>
                     <span>
-                      Taking this loan will consume {(simSummary.emiToIncome * 100).toFixed(0)}% of your monthly income. Exceeding 40% triggers a debt spiral in Hustle!
+                      Borrowing this amount consumes {(simSummary.emiToIncome * 100).toFixed(0)}% of your monthly earnings. Exceeding 40% will trigger a debt spiral event!
                     </span>
                   </div>
                 )}
 
-                {/* Take Loan Button (Primary Button) */}
-                <div className="flex justify-end pt-1">
+                {/* Exactly One Primary Action Button per screen in solid gold */}
+                <div className="pt-2">
                   {!activeLoan ? (
                     <PixelButton
                       variant="primary"
                       size="md"
                       onClick={handleTakeLoan}
+                      fullWidth
                     >
-                      🏦 Take Loan & Start EMI Schedule
+                      Take Loan & Start EMI Schedule
                     </PixelButton>
                   ) : (
-                    <span className="text-xs text-[#B4BAC4] italic">
-                      Active loan already in progress. Pay it off before taking another.
-                    </span>
+                    <div className="text-center py-2 text-xs text-[#B4BAC4]">
+                      <span>Active loan already active. </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('active')}
+                        className="text-[#FFD95A] underline hover:text-[#FFE885] cursor-pointer"
+                      >
+                        View active loan details ➔
+                      </button>
+                    </div>
                   )}
                 </div>
-              </div>
-            </StonePanel>
 
-            {/* Two Tabs: Tab 1: Simulator Details, Tab 2: Active Loan */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveTab('simulator')}
-                className={`px-4 py-2 text-[14px] font-heading cursor-pointer transition-colors ${
-                  activeTab === 'simulator'
-                    ? 'bg-[#8B5E34] text-[#FFD95A] border-2 border-[#D9A05E]'
-                    : 'bg-[#5C3826] text-[#FFF4D6] border-2 border-[#8B5E34] hover:bg-[#6E442F]'
-                }`}
-              >
-                Simulator Wisdom
-              </button>
-              <button
-                onClick={() => setActiveTab('active')}
-                className={`px-4 py-2 text-[14px] font-heading cursor-pointer transition-colors ${
-                  activeTab === 'active'
-                    ? 'bg-[#8B5E34] text-[#FFD95A] border-2 border-[#D9A05E]'
-                    : 'bg-[#5C3826] text-[#FFF4D6] border-2 border-[#8B5E34] hover:bg-[#6E442F]'
-                }`}
-              >
-                Active Loan {activeLoan ? '●' : ''}
-              </button>
-            </div>
-
-            {/* Tab 1: Simulator Wisdom */}
-            {activeTab === 'simulator' && (
-              <StonePanel title="The Lesson: Assets vs. Liabilities">
-                <p className="text-[20px] font-body text-[#B4BAC4] leading-relaxed">
-                  A loan is an agreement to purchase future freedom with today&apos;s cash. While loans can finance productive growth, high-interest consumer debt drains compound interest straight into the lender&apos;s vault. Always calculate total interest before borrowing.
+                {/* Financial Wisdom Note */}
+                <p className="text-xs text-[#B4BAC4] pt-2 border-t border-[#4B515A]/60 leading-relaxed">
+                  Financial note: High-interest consumer loans trade future freedom for present consumption. Always verify total interest and sustainability before borrowing.
                 </p>
-              </StonePanel>
+              </div>
             )}
 
             {/* Tab 2: Active Loan */}
             {activeTab === 'active' && (
-              <StonePanel title="Active Loan Details">
+              <div className="space-y-4 font-sans text-xs sm:text-sm">
                 {activeLoan ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center p-3 bg-[#2E333B] border border-[#4B515A]">
-                      <div>
-                        <span className="text-[12px] font-heading text-[#B4BAC4] block uppercase">Principal</span>
-                        <strong className="text-[20px] font-heading text-[#FFF4D6]">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
+                        <span className="text-[11px] text-[#B4BAC4] block uppercase">Principal</span>
+                        <strong className="text-sm sm:text-base font-mono text-[#FFF4D6] block mt-0.5">
                           ₹{activeLoan.principal.toLocaleString('en-IN')}
                         </strong>
                       </div>
-                      <div>
-                        <span className="text-[12px] font-heading text-[#B4BAC4] block uppercase">Rate</span>
-                        <strong className="text-[20px] font-heading text-[#FFD95A]">
+                      <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
+                        <span className="text-[11px] text-[#B4BAC4] block uppercase">Rate</span>
+                        <strong className="text-sm sm:text-base font-mono text-[#FFD95A] block mt-0.5">
                           {activeLoan.annualRatePct}% p.a.
                         </strong>
                       </div>
-                      <div>
-                        <span className="text-[12px] font-heading text-[#B4BAC4] block uppercase">Monthly EMI</span>
-                        <strong className="text-[20px] font-heading text-[#EE6A5E]">
+                      <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
+                        <span className="text-[11px] text-[#B4BAC4] block uppercase">Monthly EMI</span>
+                        <strong className="text-sm sm:text-base font-mono text-[#EE6A5E] block mt-0.5">
                           ₹{calculateEMI(activeLoan.principal, activeLoan.annualRatePct, activeLoan.months).toLocaleString('en-IN')}
                         </strong>
                       </div>
-                      <div>
-                        <span className="text-[12px] font-heading text-[#B4BAC4] block uppercase">Paid Count</span>
-                        <strong className="text-[20px] font-heading text-[#79CE5E]">
+                      <div className="p-2.5 bg-[#2E333B] border border-[#4B515A]">
+                        <span className="text-[11px] text-[#B4BAC4] block uppercase">EMIs Paid</span>
+                        <strong className="text-sm sm:text-base font-mono text-[#79CE5E] block mt-0.5">
                           {emisPaidCount} / {activeLoan.months}
                         </strong>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 bg-[#2E333B] border border-[#4B515A]">
-                      <span className="text-xs text-[#B4BAC4]">
-                        EMIs post automatically on the monthly anniversary date.
-                      </span>
-                      <PixelButton variant="primary" size="sm" onClick={() => closeLoan()}>
-                        📜 Pay Off / Close Loan
+                    <p className="text-xs text-[#B4BAC4]">
+                      EMIs post automatically on your monthly anniversary date. You can choose to retire the liability early below.
+                    </p>
+
+                    {/* Exactly One Primary Action Button per screen in solid gold */}
+                    <div className="pt-2">
+                      <PixelButton
+                        variant="primary"
+                        size="md"
+                        onClick={() => closeLoan()}
+                        fullWidth
+                      >
+                        Pay Off & Close Loan
                       </PixelButton>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-center italic py-4 text-[#B4BAC4]">
-                    No active bank loan. Your balance is debt-free!
-                  </p>
+                  <div className="text-center py-6 space-y-2">
+                    <p className="italic text-xs sm:text-sm text-[#79CE5E]">
+                      No active bank loan. Your balance is 100% debt-free!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('simulator')}
+                      className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline cursor-pointer"
+                    >
+                      Return to Simulator to test loan scenarios ➔
+                    </button>
+                  </div>
                 )}
-              </StonePanel>
+              </div>
             )}
-          </div>
+          </StonePanel>
         </WoodFrame>
 
         {/* 96px Bottom RPG Dialogue Text Box */}

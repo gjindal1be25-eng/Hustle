@@ -44,3 +44,18 @@
 - **Page Layouts & WoodFrame (`components/ui/WoodFrame.tsx`)**: Added `max-h-[calc(100vh-140px)] overflow-y-auto` to the inner content slot so long page content scrolls neatly inside the frame rather than the window. Labels positioned above inputs in `PixelInput` and `PixelSelect`. Amounts right-aligned across all tables and lists.
 - **Font Fallbacks (`app/layout.tsx`)**: Added explicit monospace font fallbacks (`ui-monospace`, `SFMono-Regular`, `Menlo`, `Monaco`, `Consolas`, `monospace`) with `display: "swap"` for both `Press_Start_2P` and `JetBrains_Mono` to eliminate layout shift if Google Fonts are slow or offline.
 
+## Prompt 4: Calmer Menu Pages
+- **Typography & Font Scoping**: Enforced arcade pixel typography (`font-heading`) strictly on page titles, tab labels, and key icons. All forms, tables, and financial data now utilize clean 14–16px sans-serif / monospace in cream (`#FFF4D6`) on dark stone panels.
+- **Single Panel Level**: Stripped nested borders, corner studs, and inner drop shadows across all full-page screens. Inner contents now render inside a single plain stone panel (`#3A3F47`) with 16px vertical spacing (`space-y-4`) between groups.
+- **Tabs with Gold Underline**: Replaced bulky wood block tabs with clean text tabs featuring an active solid gold bottom border (`border-b-2 border-[#FFD95A]`).
+- **One Primary Action Button per Screen**: Updated `PixelButton` primary/gold variants to solid gold (`#FFD95A`) with dark text (`#1B1B1F`). Every page now contains exactly ONE gold button for its primary action. All secondary operations (deletions, toggles, sub-forms, pagination) are formatted as plain text links.
+- **Option C Quick-Add Steps (`/work` & `/market`)**:
+  - Implemented 2-step quick-add flows: Step 1 (Amount input) and Step 2 (Category chips).
+  - Date, note, classification, and custom category fields tucked neatly inside an expandable "Advanced options" disclosure.
+  - History and recurring/budgets grouped in a clean second tab.
+- **Option A Calm Panel (`/story`, `/bank`, `/vault`, `/school`, `/townhall`, `/settings`)**:
+  - Maintained outer protective wood frame (`WoodFrame`), housing a single calm stone panel layout with gold tab underlines.
+  - Removed duplicate top HUD information (redundant balance and streak indicators).
+  - All lists capped at 3 items with a "See all (X)" toggle link.
+  - Budgets tab in `/market` simplified to clean progress bars with inline edit links.
+
