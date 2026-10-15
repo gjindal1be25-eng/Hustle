@@ -123,3 +123,19 @@
   - Contextual speech bubble pops up above the character's head with icon and label when approaching any building (`🪙 Earn`, `📊 Stats`, `🏆 Goals`, `📖 Story`, `📜 Loans`, `🛒 Budget`, `🎓 Learn`).
   - Subtle breathing/bobbing fidget animation activates after 2.0 seconds of player idle.
 
+## Prompt 8: Form Label Alignment, Typography & Currency Baseline Harmonization
+- **PixelInput Label Wrapping & Prefix Alignment (`components/ui/PixelInput.tsx`)**:
+  - Replaced oversized `font-heading` (`Press Start 2P`) with crisp monospace `font-body font-semibold text-xs tracking-wider uppercase` (`JetBrains Mono`).
+  - Eliminates 3-line word wrapping on multi-column forms (e.g. `Principal (₹)` now fits cleanly on 1 line).
+  - Aligned label container to `items-center min-h-[1.5rem]` so all labels start on the exact same horizontal baseline across columns.
+  - Updated input currency prefix to `font-body font-bold` so the Rupee symbol (`₹`) renders natively without font fallback jumping.
+- **Metric Cards Baseline & Tabular Numbers (`app/bank/page.tsx`)**:
+  - Switched metric value numbers from `font-heading` to `font-body font-bold tabular-nums`.
+  - Fixes missing Unicode `₹` glyph in `Press Start 2P` that caused the Rupee symbol to drift vertically above/below the digits.
+  - Labels set to `font-semibold text-xs tracking-wider whitespace-nowrap`, keeping all 4 summary cards (`Monthly EMI`, `Total Interest`, `Total Payable`, `EMI-to-Income`) on a single clean line.
+- **Header Bar Centering (`components/ui/WoodFrame.tsx`)**:
+  - Replaced wrap flexbox with a balanced 3-column CSS Grid (`[auto_1fr_auto]`) using an 84px right spacer matching the Town button.
+  - Keeps page title and subtitle mathematically centered regardless of viewport width.
+- **Top HUD Bar (`components/ui/HudBar.tsx`)**:
+  - Coin balance rendered with `font-body font-bold tabular-nums` for seamless baseline parity between `₹` and the balance number.
+
