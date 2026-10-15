@@ -37,3 +37,10 @@
 - **CR 7 (Island Dimensions)**: Island layout preserved with pixel-perfect reference scaling and clean edge margins, maintaining responsive viewport auto-scaling.
 - **CR 8 (QA)**: Full verification passed: 17/17 Vitest unit tests green, Next.js 16 static build 12/12 routes compiled with zero errors.
 
+## Prompt 3: Text Element & Readability Audit
+- **SVG Name Tags (`components/town/Town.tsx`)**: Computed using `text-anchor="middle"`, dynamically sized to `Math.round(text.length * 6.6 + 14)`. Rendered at the end of the SVG to prevent building occlusion.
+- **HUD Bar Items (`components/ui/HudBar.tsx`)**: Replaced `flex-wrap` with `flex-nowrap`, `whitespace-nowrap`, and `overflow-x-auto`. Added fixed `min-w-[140px]` to Left group (name + title), `min-w-[260px]` to Middle stats (balance, savings rate, goal progress), and `min-w-[140px]` to Right controls. Player name truncated with an ellipsis (`max-w-[120px] truncate`).
+- **RPG Text Box (`components/ui/RpgTextBox.tsx`)**: Enforced 12px padding (`p-3`), added `pt-2` top clearance to prevent the absolute name tab (`-top-3.5`) from covering the first line of text. Added `max-h-[88px] overflow-y-auto` and `break-words` to prevent multi-sentence overflow.
+- **Page Layouts & WoodFrame (`components/ui/WoodFrame.tsx`)**: Added `max-h-[calc(100vh-140px)] overflow-y-auto` to the inner content slot so long page content scrolls neatly inside the frame rather than the window. Labels positioned above inputs in `PixelInput` and `PixelSelect`. Amounts right-aligned across all tables and lists.
+- **Font Fallbacks (`app/layout.tsx`)**: Added explicit monospace font fallbacks (`ui-monospace`, `SFMono-Regular`, `Menlo`, `Monaco`, `Consolas`, `monospace`) with `display: "swap"` for both `Press_Start_2P` and `JetBrains_Mono` to eliminate layout shift if Google Fonts are slow or offline.
+

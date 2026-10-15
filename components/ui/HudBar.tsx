@@ -50,19 +50,21 @@ export function HudBar() {
   };
 
   return (
-    <header className="w-full bg-[#15161A] border-b-2 border-[#5C3826] px-3 py-1.5 min-h-[40px] flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm select-none z-30 shadow-md">
-      {/* Left: Name and Title */}
-      <div className="flex items-center gap-2 font-heading">
-        <span className="text-[#FFD95A]">{name}</span>
-        <span className="text-[#B4BAC4] text-[10px] sm:text-xs bg-[#2E333B] px-1.5 py-0.5 border border-[#4E5561]">
+    <header className="w-full bg-[#15161A] border-b-2 border-[#5C3826] px-3 py-1.5 min-h-[40px] flex flex-nowrap items-center justify-between gap-2 sm:gap-4 text-xs sm:text-sm select-none z-30 shadow-md overflow-x-auto whitespace-nowrap">
+      {/* Left: Name and Title with min-width and ellipsis truncation */}
+      <div className="flex items-center gap-2 font-heading min-w-[140px] sm:min-w-[170px] flex-shrink-0">
+        <span className="text-[#FFD95A] truncate max-w-[80px] sm:max-w-[120px] inline-block" title={name}>
+          {name}
+        </span>
+        <span className="text-[#B4BAC4] text-[10px] sm:text-xs bg-[#2E333B] px-1.5 py-0.5 border border-[#4E5561] flex-shrink-0">
           {levelTitle}
         </span>
       </div>
 
       {/* Middle: Coin Balance, Savings Heart, and Goal Progress */}
-      <div className="flex items-center gap-4 font-body text-base sm:text-lg">
+      <div className="flex items-center gap-2 sm:gap-4 font-body text-base sm:text-lg flex-shrink-0 min-w-[260px] sm:min-w-[340px] justify-center">
         {/* Coin + Balance */}
-        <div className="flex items-center gap-1.5 bg-[#25282E] px-2.5 py-0.5 border border-[#4E5561]">
+        <div className="flex items-center gap-1.5 bg-[#25282E] px-2.5 py-0.5 border border-[#4E5561] min-w-[100px] justify-center flex-shrink-0">
           <CoinIcon size={16} />
           <span
             className={`font-heading text-xs sm:text-sm ${
@@ -75,7 +77,7 @@ export function HudBar() {
 
         {/* Heart + Monthly Savings Rate */}
         <div
-          className="flex items-center gap-1 bg-[#25282E] px-2.5 py-0.5 border border-[#4E5561]"
+          className="flex items-center gap-1 bg-[#25282E] px-2.5 py-0.5 border border-[#4E5561] min-w-[65px] justify-center flex-shrink-0"
           title="Monthly Savings Rate"
         >
           <HeartIcon size={14} />
@@ -88,7 +90,7 @@ export function HudBar() {
         {activeGoal && goalProgress && (
           <Link
             href="/vault"
-            className="hidden md:flex items-center gap-2 bg-[#25282E] px-2.5 py-0.5 border border-[#4E5561] hover:border-[#FFD95A] transition-colors"
+            className="hidden md:flex items-center gap-2 bg-[#25282E] px-2.5 py-0.5 border border-[#4E5561] hover:border-[#FFD95A] transition-colors min-w-[140px] flex-shrink-0"
             title={`Goal: ${activeGoal.name}`}
           >
             <span className="text-xs text-[#FFF4D6] truncate max-w-[80px]">
@@ -109,7 +111,7 @@ export function HudBar() {
         {/* Budget Status Dots */}
         <Link
           href="/market"
-          className="flex items-center gap-1 bg-[#25282E] px-2 py-1 border border-[#4E5561] hover:border-[#FFD95A]"
+          className="flex items-center gap-1 bg-[#25282E] px-2 py-1 border border-[#4E5561] hover:border-[#FFD95A] flex-shrink-0"
           title="Budget Health"
         >
           <div
@@ -128,7 +130,7 @@ export function HudBar() {
       </div>
 
       {/* Right: Audio, Day/Night Toggle & Settings */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-[140px] sm:min-w-[170px] flex-shrink-0 justify-end">
         <button
           onClick={toggleSound}
           className="px-2 py-1 bg-[#2E333B] border border-[#4E5561] hover:border-[#FFD95A] text-xs font-heading cursor-pointer text-[#FFF4D6]"

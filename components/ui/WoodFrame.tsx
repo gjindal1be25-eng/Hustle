@@ -54,7 +54,7 @@ export function WoodFrame({
                   {title}
                 </h1>
                 {subtitle && (
-                  <p className="text-[20px] font-body text-[#FFF4D6] opacity-90 mt-0.5">
+                  <p className="text-sm sm:text-base font-body text-[#FFF4D6] opacity-90 mt-0.5">
                     {subtitle}
                   </p>
                 )}
@@ -65,8 +65,10 @@ export function WoodFrame({
           </div>
         )}
 
-        {/* Inner Content Slot */}
-        <div className="relative z-10">{children}</div>
+        {/* Inner Content Slot: scrolls inside frame, not window */}
+        <div className="relative z-10 max-h-[calc(100vh-140px)] overflow-y-auto pr-1">
+          {children}
+        </div>
       </div>
     </div>
   );

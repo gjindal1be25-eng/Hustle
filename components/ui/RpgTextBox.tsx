@@ -50,14 +50,14 @@ export function RpgTextBox({
         />
       </div>
 
-      {/* Dialogue Area */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
-        <p className="font-body text-lg sm:text-2xl text-[#FFF4D6] leading-snug tracking-wide">
+      {/* Dialogue Area: 12px padding clearance, clear of top name tab */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center py-1 pt-2 max-h-[88px] overflow-y-auto">
+        <p className="font-body text-sm sm:text-base text-[#FFF4D6] leading-relaxed tracking-normal break-words">
           &ldquo;{currentMessage}&rdquo;
         </p>
 
         {currentWhy && (
-          <p className="font-body text-xs sm:text-sm text-[#D4A373] mt-1 opacity-90 leading-normal">
+          <p className="font-body text-xs text-[#D4A373] mt-1 opacity-90 leading-normal break-words">
             🔍 {currentWhy}
           </p>
         )}

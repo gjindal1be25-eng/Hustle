@@ -1100,7 +1100,7 @@ export function Town() {
           const [sx, sy] = projectIso(b.frontX, b.frontY, 0);
           const [rx, ry] = projectIso(b.roofX, b.roofY, b.roofZ + extraH);
 
-          const tagW = b.name.length * 7 + 14;
+          const tagW = Math.round(b.name.length * 6.6 + 14);
           const isHovered = hoveredBuilding === b.id;
           const isDestination = destinationBuildingId === b.id;
 
