@@ -4,13 +4,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { TownCharacter } from './TownCharacter';
-import { playButtonSound } from '@/lib/sound';
+import { playButtonSound, playFootstepSound } from '@/lib/sound';
 import { MoodType } from '@/components/ui/CharacterSprite';
 import {
   isWalkableRoad,
   getBuildingAtDoor,
   STAND_POINTS,
-  GRID_STEP,
   Point2D,
 } from '@/lib/townGrid';
 
@@ -138,6 +137,25 @@ const BUILDINGS: BuildingDef[] = [
   },
 ];
 
+export const BUILDING_EMOTES: Record<string, { icon: string; label: string }> = {
+  work: { icon: '🪙', label: 'Earn' },
+  townhall: { icon: '📊', label: 'Stats' },
+  vault: { icon: '🏆', label: 'Goals' },
+  home: { icon: '📖', label: 'Story' },
+  bank: { icon: '📜', label: 'Loans' },
+  market: { icon: '🛒', label: 'Budget' },
+  school: { icon: '🎓', label: 'Learn' },
+};
+
+export interface DustParticle {
+  id: number;
+  x: number;
+  y: number;
+  life: number;
+  maxLife: number;
+  size: number;
+}
+
 const W = 28;
 const Hh = 24;
 const ox = 320;
@@ -151,7 +169,8 @@ function generateTownSceneElements(
   extraH: number,
   isNight: boolean,
   charPos?: Point2D,
-  charSpriteNode?: React.ReactNode
+  charSpriteNode?: React.ReactNode,
+  dustNodes?: React.ReactNode
 ): React.ReactNode[] {
   let tx = 0;
   let ty = 0;
@@ -618,6 +637,11 @@ function generateTownSceneElements(
   items.push([15.7, () => fence(0.5, 4.6, 11.1)]);
   items.push([21.2, () => fence(6.0, 10.1, 11.1)]);
 
+  // Dust particles depth-sorted right beneath character feet
+  if (charPos && dustNodes) {
+    items.push([charPos.x + charPos.y - 0.05, () => elements.push(dustNodes)]);
+  }
+
   // Character sprite depth-sorted with buildings using x + y
   if (charPos && charSpriteNode) {
     items.push([charPos.x + charPos.y, () => elements.push(charSpriteNode)]);
@@ -633,17 +657,25 @@ export function Town() {
   const router = useRouter();
   const { state, level, activeEvent } = useGame();
 
-  // Character movement state (0.25-grid units, starting on the plaza road)
+  // Character movement state (continuous sub-grid units on the plaza road)
   const [charPos, setCharPos] = useState<Point2D>({ x: 5.3, y: 6.0 });
   const [isWalking, setIsWalking] = useState(false);
   const [walkStep, setWalkStep] = useState(0);
   const [facingDir, setFacingDir] = useState<'left' | 'right'>('right');
   const [isEntering, setIsEntering] = useState(false);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
+  const [dustParticles, setDustParticles] = useState<DustParticle[]>([]);
+  const [idleTick, setIdleTick] = useState(0);
 
   const charPosRef = useRef<Point2D>({ x: 5.3, y: 6.0 });
-  const walkTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const velocityRef = useRef<{ vx: number; vy: number }>({ vx: 0, vy: 0 });
+  const activeKeysRef = useRef<Set<string>>(new Set());
+  const strideAccumRef = useRef<number>(0);
+  const dustParticlesRef = useRef<DustParticle[]>([]);
+  const nextDustIdRef = useRef<number>(1);
   const isNavigatingRef = useRef(false);
+  const idleTimeRef = useRef<number>(0);
+  const animFrameRef = useRef<number | null>(null);
 
   const theme = state.profile?.theme || 'system';
   const isNight = theme === 'night';
@@ -660,7 +692,23 @@ export function Town() {
     ? 'celebrating'
     : 'happy';
 
-  // Character figure matching customized avatar appearance, animations, and direction
+  // Proximity to nearby building for thought bubble emote
+  const nearbyBuilding = useMemo(() => {
+    for (const b of BUILDINGS) {
+      const sp = STAND_POINTS[b.id];
+      if (sp) {
+        const dist = Math.hypot(charPos.x - sp.x, charPos.y - sp.y);
+        if (dist <= 1.35) {
+          return b.id;
+        }
+      }
+    }
+    return null;
+  }, [charPos.x, charPos.y]);
+
+  const thoughtBubble = nearbyBuilding ? BUILDING_EMOTES[nearbyBuilding] : null;
+
+  // Character figure matching customized avatar appearance, animations, juice, and direction
   const charSpriteNode = useMemo(
     () => (
       <TownCharacter
@@ -674,6 +722,8 @@ export function Town() {
         outfitColor={state.profile?.avatar.outfitColor || '#2B4C7E'}
         mood={mood}
         isEntering={isEntering}
+        thoughtBubble={thoughtBubble}
+        idleTick={idleTick}
       />
     ),
     [
@@ -686,13 +736,51 @@ export function Town() {
       state.profile?.avatar.outfitColor,
       mood,
       isEntering,
+      thoughtBubble,
+      idleTick,
     ]
   );
 
-  // Scene elements with character depth-sorted with buildings using x + y
+  // Render dust puffs behind character feet
+  const dustNodes = useMemo(() => {
+    if (dustParticles.length === 0) return null;
+    return (
+      <g key="town-dust-particles" className="pointer-events-none">
+        {dustParticles.map((p) => {
+          const [px, py] = projectIso(p.x, p.y, 0);
+          const progress = 1 - p.life / p.maxLife;
+          const size = p.size * (1 + progress * 0.4);
+          const opacity = Math.max(0, (1 - progress) * 0.7);
+          return (
+            <rect
+              key={p.id}
+              x={px - size / 2}
+              y={py - size / 2}
+              width={size}
+              height={size}
+              fill="#EAD7B3"
+              stroke="#C9AC7A"
+              strokeWidth="0.7"
+              opacity={opacity}
+              transform={`rotate(45 ${px} ${py})`}
+            />
+          );
+        })}
+      </g>
+    );
+  }, [dustParticles]);
+
+  // Scene elements with character & dust depth-sorted with buildings using x + y
   const elements = useMemo(
-    () => generateTownSceneElements(extraH, isNight, charPos, charSpriteNode),
-    [extraH, isNight, charPos, charSpriteNode]
+    () =>
+      generateTownSceneElements(
+        extraH,
+        isNight,
+        charPos,
+        charSpriteNode,
+        dustNodes
+      ),
+    [extraH, isNight, charPos, charSpriteNode, dustNodes]
   );
 
   // Click a building: step directly into the doorway, then open menu
@@ -710,7 +798,7 @@ export function Town() {
     }, 140);
   };
 
-  // Keyboard navigation: move strictly on the road with arrow keys (and WASD)
+  // Keyboard input listeners: track active keys and quick enter interaction
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -722,70 +810,229 @@ export function Town() {
         return;
       }
 
-      let dx = 0;
-      let dy = 0;
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-        dy = -GRID_STEP;
-      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
-        dy = GRID_STEP;
-      } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-        dx = -GRID_STEP;
-      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-        dx = GRID_STEP;
+      const keyLower = e.key.toLowerCase();
+      if (
+        ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(
+          keyLower
+        )
+      ) {
+        e.preventDefault();
+        activeKeysRef.current.add(keyLower);
       } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
         const curr = charPosRef.current;
         const b = BUILDINGS.find((bld) => {
           const sp = STAND_POINTS[bld.id];
-          return Math.hypot(curr.x - sp.x, curr.y - sp.y) < 1.0;
+          return Math.hypot(curr.x - sp.x, curr.y - sp.y) < 1.35;
         });
-        if (b) {
+        if (b && !isNavigatingRef.current) {
           playButtonSound();
           setIsEntering(true);
           isNavigatingRef.current = true;
           setTimeout(() => router.push(b.route), 140);
         }
-        return;
-      } else {
-        return;
-      }
-
-      e.preventDefault();
-      const curr = charPosRef.current;
-      const nextX = Math.round((curr.x + dx) / GRID_STEP) * GRID_STEP;
-      const nextY = Math.round((curr.y + dy) / GRID_STEP) * GRID_STEP;
-
-      // Restrict movement strictly to the road, plaza, or building doorways
-      if (isWalkableRoad(nextX, nextY)) {
-        if (dx < 0) setFacingDir('left');
-        else if (dx > 0) setFacingDir('right');
-
-        charPosRef.current = { x: nextX, y: nextY };
-        setCharPos({ x: nextX, y: nextY });
-        setWalkStep((s) => s + 1);
-        setIsWalking(true);
-
-        if (walkTimerRef.current) clearTimeout(walkTimerRef.current);
-        walkTimerRef.current = setTimeout(() => {
-          setIsWalking(false);
-        }, 160);
-
-        // Check if character moved INTO a building doorway
-        const door = getBuildingAtDoor(nextX, nextY);
-        if (door) {
-          setIsEntering(true);
-          playButtonSound();
-          isNavigatingRef.current = true;
-          setTimeout(() => {
-            router.push(door.route);
-          }, 140);
-        }
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const keyLower = e.key.toLowerCase();
+      activeKeysRef.current.delete(keyLower);
+    };
+
+    const handleBlur = () => {
+      activeKeysRef.current.clear();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      if (walkTimerRef.current) clearTimeout(walkTimerRef.current);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [router]);
+
+  // Continuous game loop with inertia, corner sliding, doorway funnel, SFX, and dust
+  useEffect(() => {
+    let lastTime: number | null = null;
+
+    const loop = (time: number) => {
+      if (lastTime === null) {
+        lastTime = time;
+      }
+      const dt = Math.min((time - lastTime) / 1000, 0.05);
+      lastTime = time;
+
+      if (!isNavigatingRef.current) {
+        // 1. Calculate target velocity from active keys
+        const keys = activeKeysRef.current;
+        let targetVx = 0;
+        let targetVy = 0;
+
+        if (keys.has('arrowup') || keys.has('w')) {
+          targetVy -= 1;
+        }
+        if (keys.has('arrowdown') || keys.has('s')) {
+          targetVy += 1;
+        }
+        if (keys.has('arrowleft') || keys.has('a')) {
+          targetVx -= 1;
+        }
+        if (keys.has('arrowright') || keys.has('d')) {
+          targetVx += 1;
+        }
+
+        // Normalize diagonal vector
+        if (targetVx !== 0 && targetVy !== 0) {
+          targetVx *= Math.SQRT1_2;
+          targetVy *= Math.SQRT1_2;
+        }
+
+        // 2. Velocity lerping (inertia / smooth acceleration & deceleration)
+        const lerpFactor = targetVx !== 0 || targetVy !== 0 ? 0.32 : 0.22;
+        velocityRef.current.vx += (targetVx - velocityRef.current.vx) * lerpFactor;
+        velocityRef.current.vy += (targetVy - velocityRef.current.vy) * lerpFactor;
+
+        if (Math.abs(velocityRef.current.vx) < 0.001) velocityRef.current.vx = 0;
+        if (Math.abs(velocityRef.current.vy) < 0.001) velocityRef.current.vy = 0;
+
+        const vx = velocityRef.current.vx;
+        const vy = velocityRef.current.vy;
+        const speed = Math.hypot(vx, vy);
+
+        const MOVE_SPEED = 3.2; // 3.2 units per second = fluid, responsive pace
+
+        if (speed > 0.01) {
+          // Reset idle timer when moving
+          idleTimeRef.current = 0;
+          setIdleTick(0);
+
+          // Facing direction
+          if (vx < -0.05) {
+            setFacingDir('left');
+          } else if (vx > 0.05) {
+            setFacingDir('right');
+          }
+
+          const curr = charPosRef.current;
+          const prevX = curr.x;
+          const prevY = curr.y;
+          let dx = vx * dt * MOVE_SPEED;
+          const dy = vy * dt * MOVE_SPEED;
+
+          // Doorway magnetism / funnel:
+          // When moving vertically towards doorways (vy < -0.05), gently align with doorway columns
+          if (vy < -0.05) {
+            const DOOR_X_COLS = [2.0, 5.3, 8.6];
+            for (const doorX of DOOR_X_COLS) {
+              if (Math.abs(curr.x - doorX) < 0.32) {
+                dx += (doorX - curr.x) * 0.12;
+                break;
+              }
+            }
+          }
+
+          const nextX = curr.x + dx;
+          const nextY = curr.y + dy;
+
+          // Wall sliding & corner smoothing
+          let moved = false;
+          if (isWalkableRoad(nextX, nextY)) {
+            curr.x = nextX;
+            curr.y = nextY;
+            moved = true;
+          } else {
+            // Slide along X if X alone is walkable
+            if (Math.abs(dx) > 0.0001 && isWalkableRoad(nextX, curr.y)) {
+              curr.x = nextX;
+              moved = true;
+            }
+            // Slide along Y if Y alone is walkable
+            if (Math.abs(dy) > 0.0001 && isWalkableRoad(curr.x, nextY)) {
+              curr.y = nextY;
+              moved = true;
+            }
+          }
+
+          if (moved) {
+            charPosRef.current = { x: curr.x, y: curr.y };
+            setCharPos({ x: curr.x, y: curr.y });
+            setIsWalking(true);
+
+            // Stride & footstep SFX & dust puffs
+            const distMoved = Math.hypot(curr.x - prevX, curr.y - prevY);
+            strideAccumRef.current += distMoved;
+
+            if (strideAccumRef.current >= 0.32) {
+              strideAccumRef.current -= 0.32;
+              setWalkStep((s) => s + 1);
+              playFootstepSound();
+
+              // Spawn 2 dust particles behind character
+              const p1: DustParticle = {
+                id: nextDustIdRef.current++,
+                x: curr.x + (Math.random() - 0.5) * 0.12 - (vx * 0.04),
+                y: curr.y + (Math.random() - 0.5) * 0.12 - (vy * 0.04),
+                life: 0.35,
+                maxLife: 0.35,
+                size: 3.5 + Math.random() * 2,
+              };
+              const p2: DustParticle = {
+                id: nextDustIdRef.current++,
+                x: curr.x + (Math.random() - 0.5) * 0.15 - (vx * 0.05),
+                y: curr.y + (Math.random() - 0.5) * 0.15 - (vy * 0.05),
+                life: 0.3,
+                maxLife: 0.3,
+                size: 2.8 + Math.random() * 1.8,
+              };
+              dustParticlesRef.current = [...dustParticlesRef.current, p1, p2];
+            }
+
+            // Check if character walked directly INTO a building doorway
+            const door = getBuildingAtDoor(curr.x, curr.y);
+            if (door && !isNavigatingRef.current) {
+              isNavigatingRef.current = true;
+              setIsEntering(true);
+              playButtonSound();
+              setTimeout(() => {
+                router.push(door.route);
+              }, 140);
+            }
+          }
+        } else {
+          // Idle / breathing fidgets
+          setIsWalking(false);
+          idleTimeRef.current += dt;
+          if (idleTimeRef.current >= 2.0) {
+            setIdleTick(Math.floor((idleTimeRef.current - 2.0) * 2));
+          }
+        }
+
+        // Update dust particles
+        if (dustParticlesRef.current.length > 0) {
+          const remaining: DustParticle[] = [];
+          for (const p of dustParticlesRef.current) {
+            p.life -= dt;
+            if (p.life > 0) {
+              remaining.push(p);
+            }
+          }
+          dustParticlesRef.current = remaining;
+          setDustParticles(remaining);
+        }
+      }
+
+      animFrameRef.current = requestAnimationFrame(loop);
+    };
+
+    animFrameRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
     };
   }, [router]);
 

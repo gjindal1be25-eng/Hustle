@@ -118,3 +118,28 @@ export function playWarningSound() {
   osc.start(now);
   osc.stop(now + 0.28);
 }
+
+export function playFootstepSound() {
+  if (isMuted) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  const freq = 120 + Math.random() * 45;
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, now);
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.45, now + 0.025);
+
+  gain.gain.setValueAtTime(0.032, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(now);
+  osc.stop(now + 0.025);
+}
+

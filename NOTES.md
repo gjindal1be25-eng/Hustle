@@ -104,3 +104,22 @@
   - Zero ESLint warnings or errors (`npm run lint` clean).
   - 33/33 Vitest unit tests green, including new tests verifying building roof projection heights (`ry < sy - 40`) and canvas bounding limits.
 
+## Prompt 7: Continuous Game Loop, Juice, Corner Sliding, Dust Particles & Proximity Emotes
+- **Continuous RAF Game Loop & Kinematics (`components/town/Town.tsx`)**:
+  - Replaced discrete OS key-repeat jumps with a 60fps `requestAnimationFrame` continuous movement engine.
+  - Active keys tracked in a `Set<string>` supporting multi-key diagonals and instant responsiveness.
+  - Smooth velocity lerping with inertia (`lerpFactor 0.32` on acceleration, `0.22` on deceleration) for natural movement dynamics.
+- **Juice / Squash & Stretch / Lean / Dynamic Shadow (`components/town/TownCharacter.tsx`)**:
+  - Stride bob and vertical squash & stretch (`squashX: 0.94 <-> 1.05`, `stretchY: 1.06 <-> 0.95`) alternating on walk steps.
+  - Running lean tilt (`rotate(-4.5deg)` / `rotate(4.5deg)`) based on horizontal velocity and facing direction.
+  - Dynamic ground shadow that expands/contracts and darkens/lightens in sync with the character's vertical foot plant.
+- **Dust Particles & 8-Bit Footstep SFX (`components/town/Town.tsx` & `lib/sound.ts`)**:
+  - Synthesized randomized 120-165Hz soft triangle micro-decay footstep SFX (`playFootstepSound()`) triggered on stride cadence.
+  - Diamond-shaped isometric dust puffs spawned at feet upon each stride plant, depth-sorted beneath the character and gracefully fading over time.
+- **Corner Smoothing / Wall Sliding & Doorway Magnetism (`components/town/Town.tsx`)**:
+  - Independent axis fallback sliding: if diagonal movement collides with curbs or walls, single-axis movement glides the character smoothly along curbs without halting.
+  - Doorway Funnel: when pressing up towards building doorways (Work, Town Hall, Vault, Home, Bank, Market, School), gently funnels the character into the doorway center without catching on tile edges.
+- **Proximity Thought Bubbles & Idle Fidgets (`components/town/TownCharacter.tsx` & `components/town/Town.tsx`)**:
+  - Contextual speech bubble pops up above the character's head with icon and label when approaching any building (`🪙 Earn`, `📊 Stats`, `🏆 Goals`, `📖 Story`, `📜 Loans`, `🛒 Budget`, `🎓 Learn`).
+  - Subtle breathing/bobbing fidget animation activates after 2.0 seconds of player idle.
+

@@ -14,6 +14,8 @@ interface TownCharacterProps {
   outfitColor?: string;
   mood?: MoodType;
   isEntering?: boolean;
+  thoughtBubble?: { icon: string; label: string } | null;
+  idleTick?: number;
 }
 
 export function TownCharacter({
@@ -26,6 +28,8 @@ export function TownCharacter({
   outfitColor = '#2B4C7E',
   mood = 'neutral',
   isEntering = false,
+  thoughtBubble = null,
+  idleTick = 0,
 }: TownCharacterProps) {
   const [isoX, isoY] = projectIso(x, y, 0);
 
@@ -37,7 +41,19 @@ export function TownCharacter({
 
   // Walk stride alternating
   const isAltStep = walkStep % 2 === 1;
-  const bobY = isWalking ? (isAltStep ? -1.5 : 0) : 0;
+
+  // Juice: Squash & Stretch and Stride Bob
+  const bobY = isWalking ? (isAltStep ? -2.2 : 0) : Math.sin(idleTick * 2) * 0.8;
+  const squashX = isWalking ? (isAltStep ? 0.94 : 1.05) : 1;
+  const stretchY = isWalking ? (isAltStep ? 1.06 : 0.95) : (1 + Math.sin(idleTick * 2) * 0.02);
+
+  // Turn lean tilt: subtle forward lean when running
+  const leanAngle = isWalking ? (facing === 'left' ? -4.5 : 4.5) : 0;
+
+  // Dynamic ground shadow: shrinks & lightens when jumping in stride, expands on ground plant
+  const shadowRx = isWalking ? (isAltStep ? 7.5 : 9.5) : (9 + Math.sin(idleTick * 2) * 0.5);
+  const shadowRy = isWalking ? (isAltStep ? 3.8 : 4.8) : (4.5 + Math.sin(idleTick * 2) * 0.25);
+  const shadowOp = isWalking ? (isAltStep ? 0.28 : 0.44) : 0.4;
 
   return (
     <g
@@ -47,12 +63,51 @@ export function TownCharacter({
       className="transition-opacity duration-200"
       style={{ opacity: isEntering ? 0.25 : 1 }}
     >
-      {/* Soft Ground Shadow on road */}
-      <ellipse cx="0" cy="0" rx="9" ry="4.5" fill="#1B1B1F" opacity="0.4" />
+      {/* Soft Dynamic Ground Shadow on road */}
+      <ellipse cx="0" cy="0" rx={shadowRx} ry={shadowRy} fill="#1B1B1F" opacity={shadowOp} />
+
+      {/* Proximity Thought Bubble (Feature 6) */}
+      {thoughtBubble && !isEntering && (
+        <g
+          transform={`translate(0, ${-46 + Math.sin(idleTick * 3) * 2})`}
+          className="animate-fadeIn select-none pointer-events-none"
+        >
+          {/* Bubble background */}
+          <rect
+            x="-14"
+            y="-13"
+            width="28"
+            height="18"
+            rx="3"
+            fill="#FFF6E0"
+            stroke="#1B1B1F"
+            strokeWidth="1.5"
+          />
+          {/* Bubble pointer tail */}
+          <polygon
+            points="-2,5 0,9 2,5"
+            fill="#FFF6E0"
+            stroke="#1B1B1F"
+            strokeWidth="1.2"
+          />
+          {/* Inner clean fill over seam */}
+          <rect x="-13" y="-12" width="26" height="16" fill="#FFF6E0" />
+          {/* Icon */}
+          <text
+            x="0"
+            y="0"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="11"
+          >
+            {thoughtBubble.icon}
+          </text>
+        </g>
+      )}
 
       {/* Character Figure scaled 1.5x with feet pinned to ground */}
       <g
-        transform={`scale(${facing === 'left' ? -1.5 : 1.5}, 1.5) translate(-8, -22)`}
+        transform={`scale(${facing === 'left' ? -1.5 : 1.5}, 1.5) rotate(${leanAngle}) scale(${squashX}, ${stretchY}) translate(-8, -22)`}
       >
         {/* Head Bob / Walk Stride Offset */}
         <g transform={`translate(0, ${bobY})`}>
