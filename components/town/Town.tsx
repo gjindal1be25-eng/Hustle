@@ -1406,51 +1406,97 @@ export function Town() {
                 fill="transparent"
               />
 
-              {/* Active Quest Beacon floating gently above roof apex */}
+              {/* Active Quest Marker: Bouncy '!' Badge with Hover Hint Tooltip */}
               {viewMode !== 'finance' && questProgress?.activeBuildingId === b.id && (
                 <g
-                  transform={`translate(${rx}, ${(showLabel && liveBadge ? ry - 48 : ry - 26) + Math.sin(idleTick * 3.5) * 2.5})`}
+                  transform={`translate(${rx}, ${(showLabel && liveBadge ? ry - 44 : ry - 22) - Math.abs(Math.sin(idleTick * 4.5)) * 6.5})`}
                   className="pointer-events-none select-none"
                 >
-                  <g>
-                    {/* Soft pulsing halo */}
-                    <ellipse
-                      cx="0"
-                      cy="0"
-                      rx="48"
-                      ry="13"
-                      fill="#FFD95A"
-                      opacity={0.2 + Math.sin(idleTick * 3) * 0.08}
-                    />
-                    <rect
-                      x="-44"
-                      y="-11"
-                      width="88"
-                      height="20"
-                      rx="4"
-                      fill="#FFD95A"
-                      stroke="#8A5A2B"
-                      strokeWidth="1.5"
-                    />
-                    <text
-                      x="0"
-                      y="3"
-                      textAnchor="middle"
-                      fontFamily="var(--font-heading), monospace"
-                      fontSize="9"
-                      fill="#1B1B1F"
-                      fontWeight="bold"
-                      letterSpacing="0.5"
-                    >
-                      ★ QUEST TARGET
-                    </text>
-                    <polygon
-                      points="0,13 -4,9 4,9"
-                      fill="#FFD95A"
-                      stroke="#8A5A2B"
-                      strokeWidth="1"
-                    />
-                  </g>
+                  <title>
+                    {`Active Quest: ${questProgress?.currentStep?.title || 'Next Objective'} (Click to enter)`}
+                  </title>
+
+                  {/* Reactive ground shadow that contracts as '!' bounces up */}
+                  <ellipse
+                    cx="0"
+                    cy={15 + Math.abs(Math.sin(idleTick * 4.5)) * 6.5}
+                    rx={Math.max(4, 7 - Math.abs(Math.sin(idleTick * 4.5)) * 2.2)}
+                    ry={Math.max(2, 3.5 - Math.abs(Math.sin(idleTick * 4.5)) * 1.1)}
+                    fill="#1B1B1F"
+                    opacity={Math.max(0.18, 0.42 - Math.abs(Math.sin(idleTick * 4.5)) * 0.18)}
+                  />
+
+                  {/* Pulsing golden halo ring */}
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r="15"
+                    fill="#FFD95A"
+                    opacity={0.25 + Math.sin(idleTick * 4) * 0.12}
+                  />
+
+                  {/* Golden Circle Marker */}
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r="11"
+                    fill="#FFD95A"
+                    stroke="#8A5A2B"
+                    strokeWidth="1.8"
+                  />
+
+                  {/* Bold Exclamation Mark '!' */}
+                  <text
+                    x="0"
+                    y="4.5"
+                    textAnchor="middle"
+                    fontFamily="var(--font-heading), monospace, sans-serif"
+                    fontSize="13"
+                    fontWeight="900"
+                    fill="#1B1B1F"
+                  >
+                    !
+                  </text>
+
+                  {/* Downward indicator triangle */}
+                  <polygon
+                    points="0,15 -3.5,11 3.5,11"
+                    fill="#FFD95A"
+                    stroke="#8A5A2B"
+                    strokeWidth="1"
+                  />
+
+                  {/* Hint speech bubble on hover */}
+                  {isHovered && (
+                    <g transform="translate(0, -26)" className="animate-fadeIn">
+                      <rect
+                        x={-Math.max(68, ((questProgress?.currentStep?.title || 'Next Objective').length * 6.5 + 32) / 2)}
+                        y="-10"
+                        width={Math.max(136, (questProgress?.currentStep?.title || 'Next Objective').length * 6.5 + 32)}
+                        height="20"
+                        rx="4"
+                        fill="#1B1B1F"
+                        stroke="#FFD95A"
+                        strokeWidth="1.4"
+                      />
+                      <polygon
+                        points="0,13 -4,10 4,10"
+                        fill="#1B1B1F"
+                      />
+                      <text
+                        x="0"
+                        y="3.5"
+                        textAnchor="middle"
+                        fontFamily="var(--font-heading), monospace"
+                        fontSize="9"
+                        fill="#FFD95A"
+                        fontWeight="bold"
+                        letterSpacing="0.3"
+                      >
+                        🎯 Quest: {questProgress?.currentStep?.title || 'Next Objective'}
+                      </text>
+                    </g>
+                  )}
                 </g>
               )}
 
