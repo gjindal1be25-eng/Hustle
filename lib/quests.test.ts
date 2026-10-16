@@ -240,5 +240,35 @@ describe('Daily Village Noticeboard Habits', () => {
     daily = evaluateDailyHabits(state, today);
     expect(daily.habits.find((h) => h.habit.id === 'daily_log_transaction')?.completed).toBe(true);
     expect(daily.completedCount).toBe(2);
+
+    // Complete Socratic villager dialogue
+    state.completedQuests = ['socratic_uncle_sharma'];
+    daily = evaluateDailyHabits(state, today);
+    expect(daily.habits.find((h) => h.habit.id === 'daily_villager_dialogue')?.completed).toBe(true);
+    expect(daily.completedCount).toBe(3);
+
+    // Complete Blitz reflex game
+    state.completedQuests.push('daily_blitz');
+    daily = evaluateDailyHabits(state, today);
+    expect(daily.habits.find((h) => h.habit.id === 'daily_blitz_game')?.completed).toBe(true);
+    expect(daily.completedCount).toBe(4);
+    expect(daily.allCompleted).toBe(true);
+  });
+
+  it('verifies decoration IDs complete civic monument quests', () => {
+    const state = createInitialState();
+    const ch4 = QUEST_CHAPTERS.find((c) => c.id === 4)!;
+    const monumentStep = ch4.steps.find((s) => s.id === 'c4_s3_monument')!;
+    expect(monumentStep.isCompleted(state)).toBe(false);
+
+    state.decorations = ['flowerbeds'];
+    expect(monumentStep.isCompleted(state)).toBe(true);
+
+    const ch5 = QUEST_CHAPTERS.find((c) => c.id === 5)!;
+    const clockStep = ch5.steps.find((s) => s.id === 'c5_s3_clocktower')!;
+    expect(clockStep.isCompleted(state)).toBe(false);
+
+    state.decorations.push('clocktower');
+    expect(clockStep.isCompleted(state)).toBe(true);
   });
 });

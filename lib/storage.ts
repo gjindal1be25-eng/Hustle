@@ -14,6 +14,14 @@ export const INITIAL_STATE: GameState = {
     lastSeenLevel: 1,
     version: CURRENT_VERSION,
   },
+  renown: 0,
+  decorations: [],
+  petHappiness: 80,
+  lastPettedDate: undefined,
+  completedQuests: [],
+  resolvedDilemmas: [],
+  visitedBuildings: [],
+  viewMode: 'quest',
 };
 
 export function loadGameState(): GameState {
@@ -38,7 +46,7 @@ export function loadGameState(): GameState {
       parsed.meta = { ...parsed.meta, version: CURRENT_VERSION };
     }
 
-    // Ensure array fallbacks so UI never crashes on missing keys
+    // Ensure array & primitive fallbacks so UI never crashes on missing keys
     return {
       profile: parsed.profile || null,
       categories: Array.isArray(parsed.categories) ? parsed.categories : DEFAULT_CATEGORIES,
@@ -53,6 +61,14 @@ export function loadGameState(): GameState {
         lastRecapMonth: parsed.meta?.lastRecapMonth,
         version: CURRENT_VERSION,
       },
+      renown: typeof parsed.renown === 'number' ? parsed.renown : 0,
+      decorations: Array.isArray(parsed.decorations) ? parsed.decorations : [],
+      petHappiness: typeof parsed.petHappiness === 'number' ? parsed.petHappiness : 80,
+      lastPettedDate: typeof parsed.lastPettedDate === 'string' ? parsed.lastPettedDate : undefined,
+      completedQuests: Array.isArray(parsed.completedQuests) ? parsed.completedQuests : [],
+      resolvedDilemmas: Array.isArray(parsed.resolvedDilemmas) ? parsed.resolvedDilemmas : [],
+      visitedBuildings: Array.isArray(parsed.visitedBuildings) ? parsed.visitedBuildings : [],
+      viewMode: parsed.viewMode === 'finance' ? 'finance' : 'quest',
     };
   } catch (err) {
     console.error('Failed to parse hustle_v1 storage, resetting to initial state:', err);

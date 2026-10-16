@@ -30,6 +30,7 @@ export default function MarketPage() {
     toggleRecurring,
     deleteRecurring,
     recordBuildingVisit,
+    completeQuest,
   } = useGame();
 
   useEffect(() => {
@@ -184,11 +185,13 @@ export default function MarketPage() {
       rewardedBlitzRef.current = true;
       const reward = Math.max(10, Math.round(blitzScore / 4) + blitzMaxStreak * 2);
       addRenown(reward, 'Needs vs Wants Blitz');
+      completeQuest('daily_blitz');
+      completeQuest('c2_s3_blitz');
     }
     if (!blitzFinished) {
       rewardedBlitzRef.current = false;
     }
-  }, [blitzFinished, blitzScore, blitzMaxStreak, addRenown]);
+  }, [blitzFinished, blitzScore, blitzMaxStreak, addRenown, completeQuest]);
 
   const startBlitz = () => {
     const shuffled = [...NEEDS_WANTS_ITEMS].sort(() => Math.random() - 0.5);

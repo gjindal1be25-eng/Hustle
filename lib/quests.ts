@@ -327,6 +327,7 @@ export const QUEST_CHAPTERS: QuestChapter[] = [
         rewardRenown: 100,
         financialRationale: 'The ultimate civic testament to disciplined financial mastery and long-term vision.',
         isCompleted: (state: GameState) =>
+          (state.decorations || []).includes('clocktower') ||
           (state.decorations || []).includes('deco_clocktower') ||
           (state.completedQuests || []).includes('c5_s3_clocktower'),
       },

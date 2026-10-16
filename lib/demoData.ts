@@ -123,5 +123,11 @@ export function generateDemoState(todayStr?: string): GameState {
       lastRecapMonth: m1,
       version: 1,
     },
+    renown: 150,
+    decorations: ['flowerbeds'],
+    petHappiness: 90,
+    completedQuests: ['q_work_1', 'q_market_1'],
+    visitedBuildings: ['work', 'market', 'bank'],
+    viewMode: 'quest',
   };
 }

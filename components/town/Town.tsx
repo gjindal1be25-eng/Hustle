@@ -664,13 +664,13 @@ function generateTownSceneElements(
   if (decorations.includes('fountain')) {
     items.push([10.3, () => elements.push(<CrystalFountain key="dec-fountain" idleTick={idleTick} />)]);
   }
-  if (decorations.includes('gazebo')) {
+  if (decorations.includes('gazebo') || decorations.includes('park_bench')) {
     items.push([18.0, () => elements.push(<RiversideGazebo key="dec-gazebo" />)]);
   }
-  if (decorations.includes('flowerbeds')) {
+  if (decorations.includes('flowerbeds') || decorations.includes('flowerbed_blossom')) {
     items.push([9.5, () => elements.push(<BlossomFlowerbeds key="dec-flowers" />)]);
   }
-  if (decorations.includes('clocktower')) {
+  if (decorations.includes('clocktower') || decorations.includes('deco_clocktower')) {
     items.push([11.0, () => elements.push(<ClocktowerFinial key="dec-clock" />)]);
   }
 

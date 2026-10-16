@@ -39,6 +39,10 @@ export function NpcDialogueModal({
     if (option.isCorrect) {
       playFanfareSound();
       addRenown(activeDialogue.rewardRenown, `Socratic Wisdom: ${npc.name}`);
+      onCompleteQuest(`socratic_${npc.id}`);
+      if (npc.id === 'uncle_sharma') {
+        onCompleteQuest('quest_sharma');
+      }
       if (activeDialogue.unlocksLessonId) {
         dismissLesson(activeDialogue.unlocksLessonId);
       }

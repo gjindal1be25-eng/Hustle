@@ -23,9 +23,14 @@ export default function StoryPage() {
     streak,
     updateProfile,
     updateLastSeenLevel,
+    recordBuildingVisit,
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'diary' | 'wardrobe'>('diary');
+
+  useEffect(() => {
+    recordBuildingVisit('home');
+  }, [recordBuildingVisit]);
 
   useEffect(() => {
     if (level > (state.meta.lastSeenLevel || 1)) {
