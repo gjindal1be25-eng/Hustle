@@ -49,6 +49,7 @@ import { checkBadgeUnlocks } from '@/lib/badges';
 import { generateDemoState } from '@/lib/demoData';
 import { playCoinSound, playFanfareSound, playWarningSound } from '@/lib/sound';
 import { TOWN_DECORATIONS, TOWN_NPCS, FINANCIAL_DILEMMAS } from '@/lib/gameplay';
+import { ContextualNudge, evaluateContextualNudge } from '@/lib/teaching';
 
 export interface ToastMessage {
   id: string;
@@ -308,8 +309,11 @@ interface GameContextType {
   activeReaction: ActiveReaction | null;
   toasts: ToastMessage[];
   pendingLesson: Lesson | null;
+  activeContextualNudge: ContextualNudge | null;
 
   // Actions
+  triggerContextualNudge: (nudge: ContextualNudge) => void;
+  dismissContextualNudge: () => void;
   setProfile: (profile: Profile) => void;
   updateProfile: (profile: Partial<Profile>) => void;
   logTransaction: (tx: Omit<Transaction, 'id' | 'source'>) => boolean;
@@ -348,6 +352,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [activeReaction, setActiveReaction] = useState<ActiveReaction | null>(null);
+  const [activeContextualNudge, setActiveContextualNudge] = useState<ContextualNudge | null>(null);
+
+  const triggerContextualNudge = (nudge: ContextualNudge) => setActiveContextualNudge(nudge);
+  const dismissContextualNudge = () => setActiveContextualNudge(null);
 
   // Client-side initialization from localStorage
   useEffect(() => {
@@ -563,6 +571,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       balRatio
     );
     setActiveReaction(reaction);
+
+    // Evaluate Just-In-Time Contextual Teaching Nudges (Kaka on 3rd want/food, Uncle Sharma on zero balance, Priya on 48h wishlist)
+    const nudge = evaluateContextualNudge(tx, state.transactions, balance);
+    if (nudge) {
+      setActiveContextualNudge(nudge);
+    }
 
     return true;
   };
@@ -801,6 +815,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         activeReaction,
         toasts,
         pendingLesson,
+        activeContextualNudge,
+        triggerContextualNudge,
+        dismissContextualNudge,
         setProfile,
         updateProfile,
         logTransaction,

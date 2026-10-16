@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
@@ -195,6 +196,31 @@ export default function BankPage() {
                       </PixelButton>
                     </div>
                   )}
+                </div>
+
+                {/* Opportunity Cost Time Machine & Indian EMI Benchmark Quick Callout */}
+                <div className="p-3 bg-[#1B1B1F] rounded border border-[#B79A60] space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                    <span className="font-heading text-[#FFD95A] flex items-center gap-1.5">
+                      <span>⏳</span>
+                      <span>OPPORTUNITY COST TIME MACHINE</span>
+                    </span>
+                    <Link
+                      href="/school?tab=timemachine"
+                      className="text-[#2A9D8F] hover:underline font-heading text-[11px] font-bold"
+                    >
+                      Open Simulator ➔
+                    </Link>
+                  </div>
+                  <p className="text-xs text-[#B4BAC4] leading-relaxed">
+                    A ₹{simSummary.emi.toLocaleString('en-IN')}/mo loan payment builds zero wealth. Put that same monthly amount into the School’s Opportunity Cost Time Machine to see how it compounds at 12% in the Nifty 50 over 10 to 20 years.
+                  </p>
+                  <div className="pt-1 border-t border-[#3A3F47] flex items-center justify-between text-[11px] text-[#D4A373]">
+                    <span>🇮🇳 Domestic Benchmark: 30% EMI Cap Rule</span>
+                    <Link href="/school?tab=benchmarks" className="underline hover:text-[#FFD95A]">
+                      View Rules ➔
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Financial Wisdom Note */}
