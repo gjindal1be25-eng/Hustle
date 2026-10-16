@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
@@ -25,10 +25,15 @@ export default function TownHallPage() {
     savedMonths,
     insightTips,
     buyDecoration,
+    recordBuildingVisit,
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'analytics' | 'recap' | 'builder'>('analytics');
   const [showAllTransactions, setShowAllTransactions] = useState(false);
+
+  useEffect(() => {
+    recordBuildingVisit('townhall');
+  }, [recordBuildingVisit]);
 
   const today = getTodayISO();
   const currentMonth = getCurrentMonthISO(today);

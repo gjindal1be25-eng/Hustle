@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
@@ -17,9 +17,14 @@ export default function BankPage() {
     avgMonthlyIncome,
     takeLoan,
     closeLoan,
+    recordBuildingVisit,
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'simulator' | 'active'>('simulator');
+
+  useEffect(() => {
+    recordBuildingVisit('bank');
+  }, [recordBuildingVisit]);
 
   // Simulator state
   const [principal, setPrincipal] = useState<string>('50000');

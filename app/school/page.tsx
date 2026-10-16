@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
@@ -26,10 +26,14 @@ function SchoolContent() {
   const validTabs: SchoolTab[] = ['scrolls', 'timemachine', 'biases', 'benchmarks', 'quiz', 'book'];
   const initialTab: SchoolTab = paramTab && validTabs.includes(paramTab) ? paramTab : 'scrolls';
 
-  const { state, addRenown } = useGame();
+  const { state, addRenown, recordBuildingVisit } = useGame();
   const [activeTab, setActiveTab] = useState<SchoolTab>(initialTab);
   const [scrollSubTab, setScrollSubTab] = useState<'unlocked' | 'locked'>('unlocked');
   const [showAllScrolls, setShowAllScrolls] = useState(false);
+
+  useEffect(() => {
+    recordBuildingVisit('school');
+  }, [recordBuildingVisit]);
 
   // Speed Quiz state
   const [quizIndex, setQuizIndex] = useState(0);

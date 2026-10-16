@@ -27,6 +27,7 @@ import {
 } from './TownDecorations';
 import { NpcDialogueModal } from './NpcDialogueModal';
 import { DilemmaModal } from './DilemmaModal';
+import { TownNoticeboardModal } from './TownNoticeboardModal';
 
 interface BuildingDef {
   id: 'work' | 'townhall' | 'vault' | 'home' | 'bank' | 'market' | 'school';
@@ -722,6 +723,10 @@ export function Town() {
     petDog,
     completeQuest,
     resolveDilemma,
+    questProgress,
+    dailyHabits,
+    viewMode,
+    setViewMode,
   } = useGame();
 
   // Character movement state (continuous sub-grid units on the plaza road)
@@ -741,6 +746,7 @@ export function Town() {
   const [activeDilemma, setActiveDilemma] = useState<Dilemma | null>(null);
   const [pettedRecently, setPettedRecently] = useState(false);
   const [sheruBannerDismissed, setSheruBannerDismissed] = useState(false);
+  const [showNoticeboard, setShowNoticeboard] = useState(false);
 
   const charPosRef = useRef<Point2D>({ x: 5.3, y: 6.0 });
   const walkPathRef = useRef<Point2D[]>([]);
@@ -1410,6 +1416,45 @@ export function Town() {
                 fill="transparent"
               />
 
+              {/* Active Quest Beacon floating above roof apex */}
+              {viewMode !== 'finance' && questProgress?.activeBuildingId === b.id && (
+                <g
+                  transform={`translate(${rx}, ${showLabel && liveBadge ? ry - 54 : ry - 32})`}
+                  className="pointer-events-none select-none"
+                >
+                  <g className="animate-bounce">
+                    <rect
+                      x="-44"
+                      y="-11"
+                      width="88"
+                      height="20"
+                      rx="4"
+                      fill="#FFD95A"
+                      stroke="#8A5A2B"
+                      strokeWidth="1.5"
+                    />
+                    <text
+                      x="0"
+                      y="3"
+                      textAnchor="middle"
+                      fontFamily="var(--font-heading), monospace"
+                      fontSize="9"
+                      fill="#1B1B1F"
+                      fontWeight="bold"
+                      letterSpacing="0.5"
+                    >
+                      ★ QUEST TARGET
+                    </text>
+                    <polygon
+                      points="0,13 -4,9 4,9"
+                      fill="#FFD95A"
+                      stroke="#8A5A2B"
+                      strokeWidth="1"
+                    />
+                  </g>
+                </g>
+              )}
+
               {/* Live Badge floating directly above the Name Tag on the roof - only up close or on hover */}
               {showLabel && liveBadge && (
                 <g transform={`translate(${rx}, ${ry - 30})`} className="pointer-events-none select-none animate-fadeIn">
@@ -1703,6 +1748,33 @@ export function Town() {
             <span>{b.name}</span>
           </button>
         ))}
+
+        <div className="h-4 w-px bg-[#4E5561] mx-1 hidden sm:inline" />
+
+        {/* Noticeboard Button */}
+        <button
+          type="button"
+          onClick={() => setShowNoticeboard(true)}
+          className="px-2.5 py-1 bg-[#3A2E1A] hover:bg-[#FFD95A] hover:text-[#1B1B1F] text-[#FFD95A] border border-[#B79A60] text-[10px] sm:text-xs font-heading cursor-pointer transition-colors flex items-center gap-1 shadow-xs font-bold"
+          title="Daily Financial Noticeboard & Habits"
+        >
+          <span>📋</span>
+          <span>Noticeboard ({dailyHabits?.completedCount ?? 0}/{dailyHabits?.totalCount ?? 4})</span>
+        </button>
+
+        {/* Mode Toggle Button */}
+        <button
+          type="button"
+          onClick={() => setViewMode(viewMode === 'finance' ? 'quest' : 'finance')}
+          className={`px-2 py-1 border text-[10px] sm:text-xs font-heading cursor-pointer transition-colors flex items-center gap-1 shadow-xs ${
+            viewMode === 'finance'
+              ? 'bg-[#1e293b] text-[#38bdf8] border-[#38bdf8]'
+              : 'bg-[#25282E] text-[#B4BAC4] border-[#4E5561] hover:text-[#FFF4D6]'
+          }`}
+          title={viewMode === 'finance' ? 'Switch to Quest Mode' : 'Switch to Pure Financial Mode'}
+        >
+          <span>{viewMode === 'finance' ? '📊 Finance' : '🎮 Quests'}</span>
+        </button>
       </div>
 
       {/* NPC Dialogue & Bounty Modal */}
@@ -1727,6 +1799,11 @@ export function Town() {
             setActiveDilemma(null);
           }}
         />
+      )}
+
+      {/* Daily Town Noticeboard Modal */}
+      {showNoticeboard && (
+        <TownNoticeboardModal onClose={() => setShowNoticeboard(false)} />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
@@ -15,11 +15,16 @@ export default function VaultPage() {
     state,
     addGoal,
     deleteGoal,
+    recordBuildingVisit,
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'active' | 'reached'>('active');
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [showAllGoals, setShowAllGoals] = useState(false);
+
+  useEffect(() => {
+    recordBuildingVisit('vault');
+  }, [recordBuildingVisit]);
 
   const [name, setName] = useState<string>('');
   const [targetAmount, setTargetAmount] = useState<string>('');

@@ -5,6 +5,7 @@ import { useGame } from '@/context/GameContext';
 import { SetupFlow } from '@/components/setup/SetupFlow';
 import { HudBar } from '@/components/ui/HudBar';
 import { Town } from '@/components/town/Town';
+import { ObjectiveTracker } from '@/components/town/ObjectiveTracker';
 import { RpgTextBox } from '@/components/ui/RpgTextBox';
 import { PixelButton } from '@/components/ui/PixelButton';
 import { StonePanel } from '@/components/ui/StonePanel';
@@ -33,7 +34,10 @@ export default function HomePage() {
       <HudBar />
 
       {/* Main Town Shell Container */}
-      <div className="w-full max-w-[890px] px-3 sm:px-6 py-4 flex flex-col items-center gap-4 flex-1">
+      <div className="w-full max-w-[890px] px-3 sm:px-6 py-4 flex flex-col items-center gap-3 flex-1">
+        {/* Active Objective Tracker Bar */}
+        <ObjectiveTracker />
+
         {/* Floating Isometric Town SVG */}
         <div className="w-full">
           <Town />

@@ -50,6 +50,12 @@ import { generateDemoState } from '@/lib/demoData';
 import { playCoinSound, playFanfareSound, playWarningSound } from '@/lib/sound';
 import { TOWN_DECORATIONS, TOWN_NPCS, FINANCIAL_DILEMMAS } from '@/lib/gameplay';
 import { ContextualNudge, evaluateContextualNudge } from '@/lib/teaching';
+import {
+  evaluateQuestProgress,
+  evaluateDailyHabits,
+  QuestProgress,
+  DailyHabitsProgress,
+} from '@/lib/quests';
 
 export interface ToastMessage {
   id: string;
@@ -91,7 +97,10 @@ type Action =
   | { type: 'BUY_DECORATION'; payload: { id: string; cost: number } }
   | { type: 'PET_DOG'; payload: { date: string } }
   | { type: 'COMPLETE_QUEST'; payload: { questId: string; rewardRenown: number } }
-  | { type: 'RESOLVE_DILEMMA'; payload: { dilemmaId: string; renownAdd: number } };
+  | { type: 'RESOLVE_DILEMMA'; payload: { dilemmaId: string; renownAdd: number } }
+  | { type: 'SET_VIEW_MODE'; payload: 'quest' | 'finance' }
+  | { type: 'RECORD_BUILDING_VISIT'; payload: string }
+  | { type: 'COMPLETE_QUEST_STEP'; payload: { stepId: string; rewardRenown: number } };
 
 function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -287,6 +296,31 @@ function gameReducer(state: GameState, action: Action): GameState {
       };
     }
 
+    case 'SET_VIEW_MODE':
+      return {
+        ...state,
+        viewMode: action.payload,
+      };
+
+    case 'RECORD_BUILDING_VISIT': {
+      const visited = state.visitedBuildings || [];
+      if (visited.includes(action.payload)) return state;
+      return {
+        ...state,
+        visitedBuildings: [...visited, action.payload],
+      };
+    }
+
+    case 'COMPLETE_QUEST_STEP': {
+      const completed = state.completedQuests || [];
+      if (completed.includes(action.payload.stepId)) return state;
+      return {
+        ...state,
+        completedQuests: [...completed, action.payload.stepId],
+        renown: (state.renown ?? 0) + action.payload.rewardRenown,
+      };
+    }
+
     default:
       return state;
   }
@@ -310,8 +344,14 @@ interface GameContextType {
   toasts: ToastMessage[];
   pendingLesson: Lesson | null;
   activeContextualNudge: ContextualNudge | null;
+  questProgress: QuestProgress;
+  dailyHabits: DailyHabitsProgress;
+  viewMode: 'quest' | 'finance';
 
   // Actions
+  setViewMode: (mode: 'quest' | 'finance') => void;
+  recordBuildingVisit: (buildingId: string) => void;
+  completeQuestStep: (stepId: string, rewardRenown?: number) => void;
   triggerContextualNudge: (nudge: ContextualNudge) => void;
   dismissContextualNudge: () => void;
   setProfile: (profile: Profile) => void;
@@ -465,6 +505,32 @@ export function GameProvider({ children }: { children: ReactNode }) {
       avgMonthlyIncome
     );
   }, [state.loan, avgMonthlyIncome]);
+
+  const questProgress = useMemo(
+    () => evaluateQuestProgress(state),
+    [state]
+  );
+
+  const dailyHabits = useMemo(
+    () => evaluateDailyHabits(state, today),
+    [state, today]
+  );
+
+  const viewMode = state.viewMode || 'quest';
+
+  const setViewMode = (mode: 'quest' | 'finance') => {
+    dispatch({ type: 'SET_VIEW_MODE', payload: mode });
+  };
+
+  const recordBuildingVisit = (buildingId: string) => {
+    dispatch({ type: 'RECORD_BUILDING_VISIT', payload: buildingId });
+  };
+
+  const completeQuestStep = (stepId: string, rewardRenown = 25) => {
+    dispatch({ type: 'COMPLETE_QUEST_STEP', payload: { stepId, rewardRenown } });
+    playFanfareSound();
+    addToast('Milestone Achieved! ⭐', `Completed quest milestone (+${rewardRenown} Renown)!`, 'success');
+  };
 
   // Check for newly unlocked badges
   useEffect(() => {
@@ -818,6 +884,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
         activeContextualNudge,
         triggerContextualNudge,
         dismissContextualNudge,
+        questProgress,
+        dailyHabits,
+        viewMode,
+        setViewMode,
+        recordBuildingVisit,
+        completeQuestStep,
         setProfile,
         updateProfile,
         logTransaction,

@@ -100,6 +100,8 @@ export interface GameState {
   lastPettedDate?: string;
   completedQuests?: string[];
   resolvedDilemmas?: string[];
+  visitedBuildings?: string[];
+  viewMode?: 'quest' | 'finance';
 }
 
 export interface LoanSummary {

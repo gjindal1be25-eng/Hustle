@@ -29,7 +29,12 @@ export default function MarketPage() {
     addRecurring,
     toggleRecurring,
     deleteRecurring,
+    recordBuildingVisit,
   } = useGame();
+
+  useEffect(() => {
+    recordBuildingVisit('market');
+  }, [recordBuildingVisit]);
 
   const [activeTab, setActiveTab] = useState<'log' | 'budgets' | 'blitz' | 'recurring'>('log');
   const [showAdvanced, setShowAdvanced] = useState(false);

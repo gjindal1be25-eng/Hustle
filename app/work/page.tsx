@@ -33,11 +33,16 @@ export default function WorkPage() {
     toggleRecurring,
     deleteRecurring,
     updateLastSeenLevel,
+    recordBuildingVisit,
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'log' | 'history'>('log');
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  useEffect(() => {
+    recordBuildingVisit('work');
+  }, [recordBuildingVisit]);
 
   useEffect(() => {
     if (level > (state.meta.lastSeenLevel || 1)) {
