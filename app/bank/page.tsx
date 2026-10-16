@@ -142,12 +142,42 @@ export default function BankPage() {
                     <span className="text-[11px] sm:text-xs font-semibold text-[#B4BAC4] block uppercase tracking-wider whitespace-nowrap">EMI-to-Income</span>
                     <strong
                       className={`text-base sm:text-lg font-bold block mt-1 tabular-nums ${
-                        isHighRisk ? 'text-[#EE6A5E]' : 'text-[#79CE5E]'
+                        simSummary.emiToIncome > 0.4 ? 'text-[#EE6A5E]' : simSummary.emiToIncome > 0.3 ? 'text-[#E9C46A]' : 'text-[#79CE5E]'
                       }`}
                     >
                       {(simSummary.emiToIncome * 100).toFixed(0)}%
                     </strong>
                   </div>
+                </div>
+
+                {/* Indian Domestic 30% EMI Cap Rule Safety Gauge */}
+                <div className="p-2.5 bg-[#23252B] border border-[#4B515A] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🇮🇳</span>
+                    <div>
+                      <span className="font-heading text-[#FFD95A] block text-[11px]">
+                        30% FIXED EMI SAFETY CAP RULE
+                      </span>
+                      <span className="text-[11px] text-[#B4BAC4]">
+                        Total monthly debt obligations should not exceed 30–35% of net take-home salary.
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-2.5 py-1 text-[11px] font-bold uppercase font-heading shrink-0 text-center border ${
+                      simSummary.emiToIncome <= 0.30
+                        ? 'bg-[#2A9D8F]/20 text-[#2A9D8F] border-[#2A9D8F]'
+                        : simSummary.emiToIncome <= 0.40
+                        ? 'bg-[#E9C46A]/20 text-[#E9C46A] border-[#E9C46A]'
+                        : 'bg-[#E76F51]/20 text-[#E76F51] border-[#E76F51]'
+                    }`}
+                  >
+                    {simSummary.emiToIncome <= 0.30
+                      ? '✓ SAFE (<30% TAKE-HOME)'
+                      : simSummary.emiToIncome <= 0.40
+                      ? '⚠ CAUTION (30–40% STRETCH)'
+                      : '🚨 DANGER (>40% HIGH RISK)'}
+                  </span>
                 </div>
 
                 {/* High Debt Warning */}

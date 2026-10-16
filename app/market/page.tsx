@@ -26,11 +26,21 @@ export default function MarketPage() {
     renameCategory,
     deleteCategory,
     addRenown,
+    addRecurring,
+    toggleRecurring,
+    deleteRecurring,
   } = useGame();
 
-  const [activeTab, setActiveTab] = useState<'log' | 'budgets' | 'blitz'>('log');
+  const [activeTab, setActiveTab] = useState<'log' | 'budgets' | 'blitz' | 'recurring'>('log');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showAllHistory, setShowAllHistory] = useState(false);
+
+  // Recurring form state
+  const [showAddRec, setShowAddRec] = useState(false);
+  const [recAmount, setRecAmount] = useState('');
+  const [recCategoryId, setRecCategoryId] = useState('cat_rent');
+  const [recFreq, setRecFreq] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
+  const [recTag, setRecTag] = useState<NeedWantTag>('need');
 
   // Blitz Mini-game State
   const [blitzPlaying, setBlitzPlaying] = useState(false);
@@ -66,6 +76,25 @@ export default function MarketPage() {
   const [nameInput, setNameInput] = useState<string>('');
 
   const expenses = state.transactions.filter((t) => t.type === 'expense');
+  const recurringExpenses = state.recurring.filter((r) => r.type === 'expense');
+
+  const handleAddRecurringExpense = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = parseFloat(recAmount);
+    if (isNaN(val) || val <= 0) return;
+
+    addRecurring({
+      type: 'expense',
+      categoryId: recCategoryId,
+      tag: recTag,
+      amount: val,
+      frequency: recFreq,
+      startDate: getTodayISO(),
+    });
+
+    setRecAmount('');
+    setShowAddRec(false);
+  };
 
   const handleCategorySelect = (id: string) => {
     setCategoryId(id);
@@ -244,6 +273,17 @@ export default function MarketPage() {
                 }`}
               >
                 Needs vs Wants Blitz ⚡
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('recurring')}
+                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
+                  activeTab === 'recurring'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                    : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
+                }`}
+              >
+                Subscriptions & Bills ({recurringExpenses.length})
               </button>
             </div>
 
@@ -792,6 +832,251 @@ export default function MarketPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Tab 4: Subscriptions & Recurring Bills */}
+            {activeTab === 'recurring' && (
+              <div className="space-y-4">
+                {/* Header Summary & Add Toggle */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#4B515A]/60">
+                  <div>
+                    <h3 className="text-sm font-heading text-[#FFD95A]">
+                      RECURRING SUBSCRIPTIONS & FIXED BILLS
+                    </h3>
+                    <p className="text-xs text-[#B4BAC4]">
+                      Rent, broadband, Netflix, gym fees, or SIPs automatically recorded each cycle.
+                    </p>
+                  </div>
+                  <PixelButton
+                    variant="wood"
+                    size="sm"
+                    onClick={() => setShowAddRec(!showAddRec)}
+                  >
+                    {showAddRec ? 'CANCEL' : '+ ADD BILL / SUB'}
+                  </PixelButton>
+                </div>
+
+                {/* Recurring Summary Metric Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="p-2.5 bg-[#1B1B1F] border border-[#4B515A]">
+                    <span className="text-[10px] text-[#B4BAC4] block uppercase">Est. Monthly Outflow</span>
+                    <span className="text-sm sm:text-base font-bold text-[#EE6A5E] font-mono">
+                      ₹{Math.round(
+                        recurringExpenses
+                          .filter((r) => r.active)
+                          .reduce((sum, r) => {
+                            if (r.frequency === 'daily') return sum + r.amount * 30;
+                            if (r.frequency === 'weekly') return sum + r.amount * 4.33;
+                            return sum + r.amount;
+                          }, 0)
+                      ).toLocaleString('en-IN')}/mo
+                    </span>
+                  </div>
+                  <div className="p-2.5 bg-[#1B1B1F] border border-[#4B515A]">
+                    <span className="text-[10px] text-[#B4BAC4] block uppercase">Active Subscriptions</span>
+                    <span className="text-sm sm:text-base font-bold text-[#79CE5E] font-mono">
+                      {recurringExpenses.filter((r) => r.active).length} of {recurringExpenses.length} Active
+                    </span>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1 p-2.5 bg-[#1B1B1F] border border-[#4B515A]">
+                    <span className="text-[10px] text-[#B4BAC4] block uppercase">Next Leak Audit</span>
+                    <span className="text-xs font-bold text-[#FFD95A]">Recommended: Quarterly</span>
+                  </div>
+                </div>
+
+                {/* Add Recurring Form */}
+                {showAddRec && (
+                  <form
+                    onSubmit={handleAddRecurringExpense}
+                    className="p-3.5 bg-[#23252B] border-2 border-[#D4A373] space-y-3 animate-fadeIn"
+                  >
+                    <div className="text-xs font-heading text-[#FFD95A]">
+                      NEW RECURRING BILL OR SUBSCRIPTION
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[11px] uppercase tracking-wider text-[#B4BAC4] block mb-1">
+                          Category
+                        </label>
+                        <PixelSelect
+                          value={recCategoryId}
+                          onChange={(e) => {
+                            const newCat = e.target.value;
+                            setRecCategoryId(newCat);
+                            const cat = state.categories.find((c) => c.id === newCat);
+                            if (cat) setRecTag(cat.defaultTag);
+                          }}
+                          options={state.categories.map((c) => ({
+                            value: c.id,
+                            label: c.name,
+                          }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] uppercase tracking-wider text-[#B4BAC4] block mb-1">
+                          Amount (₹)
+                        </label>
+                        <PixelInput
+                          prefix="₹"
+                          type="number"
+                          min="1"
+                          placeholder="e.g. 1199"
+                          value={recAmount}
+                          onChange={(e) => setRecAmount(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] uppercase tracking-wider text-[#B4BAC4] block mb-1">
+                          Frequency
+                        </label>
+                        <PixelSelect
+                          value={recFreq}
+                          onChange={(e) => setRecFreq(e.target.value as 'daily' | 'weekly' | 'monthly')}
+                          options={[
+                            { value: 'monthly', label: 'Monthly (e.g. Rent/WiFi)' },
+                            { value: 'weekly', label: 'Weekly (e.g. Groceries)' },
+                            { value: 'daily', label: 'Daily (e.g. Newspaper/Milk)' },
+                          ]}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tag toggle (Need vs Want) */}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#B4BAC4]">Classification:</span>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setRecTag('need')}
+                            className={`px-2 py-0.5 text-xs font-heading border cursor-pointer ${
+                              recTag === 'need'
+                                ? 'bg-[#2A9D8F] text-[#FFF4D6] border-[#2A9D8F]'
+                                : 'bg-[#1B1B1F] text-[#B4BAC4] border-[#4B515A]'
+                            }`}
+                          >
+                            NEED (Fixed Bill)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRecTag('want')}
+                            className={`px-2 py-0.5 text-xs font-heading border cursor-pointer ${
+                              recTag === 'want'
+                                ? 'bg-[#E76F51] text-[#FFF4D6] border-[#E76F51]'
+                                : 'bg-[#1B1B1F] text-[#B4BAC4] border-[#4B515A]'
+                            }`}
+                          >
+                            WANT (Optional Sub)
+                          </button>
+                        </div>
+                      </div>
+
+                      <PixelButton variant="primary" size="sm" type="submit">
+                        SAVE BILL RULE
+                      </PixelButton>
+                    </div>
+                  </form>
+                )}
+
+                {/* Subscriptions List */}
+                {recurringExpenses.length === 0 ? (
+                  <div className="p-6 bg-[#23252B] border border-[#4B515A] text-center space-y-2">
+                    <div className="text-3xl">📅</div>
+                    <p className="text-xs sm:text-sm text-[#FFF4D6]">
+                      No recurring subscriptions or bills active.
+                    </p>
+                    <p className="text-xs text-[#B4BAC4]">
+                      Add regular rent, electricity, Netflix, or gym fees here so they are accounted for automatically!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {recurringExpenses.map((rec) => {
+                      const cat = state.categories.find((c) => c.id === rec.categoryId);
+                      return (
+                        <div
+                          key={rec.id}
+                          className="p-3 bg-[#23252B] border border-[#4B515A] flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all hover:border-[#B79A60]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">🏷️</span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs sm:text-sm font-bold text-[#FFF4D6]">
+                                  {cat?.name || 'Expense'}
+                                </span>
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.2 border uppercase font-bold ${
+                                    rec.tag === 'need'
+                                      ? 'text-[#2A9D8F] border-[#2A9D8F]/60 bg-[#2A9D8F]/10'
+                                      : 'text-[#E76F51] border-[#E76F51]/60 bg-[#E76F51]/10'
+                                  }`}
+                                >
+                                  {rec.tag}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-[#B4BAC4] uppercase tracking-wider">
+                                {rec.frequency} · Started {rec.startDate}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-3 pt-1 sm:pt-0 border-t sm:border-t-0 border-[#4B515A]/40">
+                            <div className="text-right">
+                              <span className="text-sm sm:text-base font-mono font-bold text-[#FFD95A]">
+                                ₹{rec.amount.toLocaleString('en-IN')}
+                              </span>
+                              <span className="text-[10px] text-[#B4BAC4] block">
+                                per {rec.frequency === 'daily' ? 'day' : rec.frequency === 'weekly' ? 'week' : 'month'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toggleRecurring(rec.id)}
+                                className={`text-xs px-2 py-1 border cursor-pointer font-bold transition-colors ${
+                                  rec.active
+                                    ? 'text-[#79CE5E] border-[#79CE5E]/50 bg-[#79CE5E]/10 hover:bg-[#79CE5E]/20'
+                                    : 'text-[#EE6A5E] border-[#EE6A5E]/50 bg-[#EE6A5E]/10 hover:bg-[#EE6A5E]/20'
+                                }`}
+                              >
+                                {rec.active ? 'ACTIVE' : 'PAUSED'}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => deleteRecurring(rec.id)}
+                                className="text-xs text-[#EE6A5E] hover:text-[#FF8A8A] hover:underline p-1 cursor-pointer"
+                                title="Delete Rule"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Behavioral Pro-Tip Banner */}
+                <div className="p-3 bg-[#1B1B1F] border border-[#B79A60] rounded-none flex items-start gap-2.5">
+                  <span className="text-lg">💡</span>
+                  <div className="text-xs text-[#FFF4D6] space-y-1">
+                    <p className="font-bold text-[#FFD95A]">
+                      The Subscription Trap (Behavioral Finance)
+                    </p>
+                    <p className="text-[#B4BAC4] leading-relaxed">
+                      Micro-subscriptions (₹299 for streaming, ₹499 for cloud storage, ₹1,499 for unused gym) feel negligible on day 1 because they bypass cognitive friction. Audit your recurring expenses quarterly and pause any service not used in the last 30 days!
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </StonePanel>

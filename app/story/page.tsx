@@ -9,9 +9,8 @@ import { PixelButton } from '@/components/ui/PixelButton';
 import { CharacterSprite } from '@/components/ui/CharacterSprite';
 import { RpgTextBox } from '@/components/ui/RpgTextBox';
 import { HudBar } from '@/components/ui/HudBar';
-import { calculateGoalProgress, getTodayISO } from '@/lib/rules';
-import { LESSONS, LEVEL_THRESHOLDS } from '@/lib/constants';
-import { Lesson } from '@/lib/types';
+import { AVATAR_PRESETS, LEVEL_THRESHOLDS } from '@/lib/constants';
+import { getTodayISO, calculateGoalProgress } from '@/lib/rules';
 
 export default function StoryPage() {
   const {
@@ -21,11 +20,12 @@ export default function StoryPage() {
     savedMonths,
     activeEvent,
     budgetStatuses,
+    streak,
+    updateProfile,
     updateLastSeenLevel,
   } = useGame();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'lessons'>('overview');
-  const [showAllLessons, setShowAllLessons] = useState(false);
+  const [activeTab, setActiveTab] = useState<'diary' | 'wardrobe'>('diary');
 
   useEffect(() => {
     if (level > (state.meta.lastSeenLevel || 1)) {
@@ -54,12 +54,8 @@ export default function StoryPage() {
   // Problem categories for warning strip
   const alertCategories = budgetStatuses.filter((b) => b.status !== 'normal');
 
-  // Lessons list (last 3 items or all)
-  const allLessons = LESSONS.map((l: Lesson) => ({
-    ...l,
-    unlocked: state.lessonsSeen.some((s) => s.lessonId === l.id),
-  }));
-  const displayedLessons = showAllLessons ? allLessons : allLessons.slice(0, 3);
+  const hair = state.profile?.avatar.hairColor || AVATAR_PRESETS.hairColors[0].value;
+  const outfit = state.profile?.avatar.outfitColor || AVATAR_PRESETS.outfitColors[0].value;
 
   return (
     <div className="w-full flex flex-col items-center min-h-screen bg-[#1B1B1F]">
@@ -67,46 +63,48 @@ export default function StoryPage() {
 
       <div className="w-full max-w-[720px] px-3 sm:px-4 py-4 space-y-4 flex-1">
         <WoodFrame
-          title="HOME & DIARY"
-          subtitle="Your daily chronicle, current life events, and story progression"
+          title="HOME & PERSONAL DIARY"
+          subtitle="Your personal chronicle, emotional state, recovery plans, and character wardrobe"
         >
           {/* Single Calm Stone Panel with Gold Tab Underline */}
           <StonePanel className="space-y-4">
             {/* Tabs with Gold Underline */}
-            <div className="flex border-b border-[#4B515A] gap-6 pb-2">
+            <div className="flex border-b border-[#4B515A] gap-6 pb-2 text-xs sm:text-sm font-heading">
               <button
                 type="button"
-                onClick={() => setActiveTab('overview')}
-                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
-                  activeTab === 'overview'
-                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                onClick={() => setActiveTab('diary')}
+                className={`pb-1 cursor-pointer transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'diary'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A] font-bold'
                     : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
                 }`}
               >
-                Story & Goals
+                <span>📖</span>
+                <span>Personal Diary & Life</span>
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('lessons')}
-                className={`pb-1 text-xs sm:text-sm font-heading cursor-pointer transition-colors ${
-                  activeTab === 'lessons'
-                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A]'
+                onClick={() => setActiveTab('wardrobe')}
+                className={`pb-1 cursor-pointer transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'wardrobe'
+                    ? 'text-[#FFD95A] border-b-2 border-[#FFD95A] font-bold'
                     : 'text-[#B4BAC4] hover:text-[#FFF4D6]'
                 }`}
               >
-                Lessons ({allLessons.filter((l) => l.unlocked).length} Unlocked)
+                <span>🪞</span>
+                <span>Wardrobe & Mirror</span>
               </button>
             </div>
 
-            {/* Tab 1: Story Overview */}
-            {activeTab === 'overview' && (
+            {/* Tab 1: Personal Diary & Life Narrative */}
+            {activeTab === 'diary' && (
               <div className="space-y-4 font-sans text-xs sm:text-sm">
-                {/* Current Narrative Scene & Why Line */}
+                {/* Current Narrative Scene & Mood */}
                 <div className="flex items-start gap-4 pb-3 border-b border-[#4B515A]/60">
                   <div className="flex-shrink-0 flex flex-col items-center p-2 bg-[#1B1B1F] border border-[#4B515A]">
                     <CharacterSprite
-                      hairColor={state.profile?.avatar.hairColor}
-                      outfitColor={state.profile?.avatar.outfitColor}
+                      hairColor={hair}
+                      outfitColor={outfit}
                       mood={
                         activeEvent.type === 'debt_spiral'
                           ? 'worried'
@@ -123,30 +121,34 @@ export default function StoryPage() {
                   </div>
 
                   <div className="flex-1 space-y-1.5">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[11px] bg-[#382E25] text-[#FFD95A] px-2 py-0.5 border border-[#54433A] uppercase font-bold">
                         Scene: {activeEvent.scene}
                       </span>
                       <span className="text-[11px] bg-[#2E333B] text-[#FFF4D6] px-2 py-0.5 border border-[#4B515A] uppercase">
                         {activeEvent.type.replace('_', ' ')}
                       </span>
+                      <span className="text-[11px] bg-[#2A9D8F]/20 text-[#2A9D8F] px-2 py-0.5 border border-[#2A9D8F]/40 font-mono font-bold">
+                        🔥 {streak}-Day Logging Streak
+                      </span>
                     </div>
 
-                    <p className="text-sm sm:text-base text-[#FFF4D6] leading-snug">
+                    <p className="text-sm sm:text-base text-[#FFF4D6] leading-snug italic">
                       &ldquo;{activeEvent.eventLine}&rdquo;
                     </p>
 
                     <div className="p-2 bg-[#2E333B] border-l-2 border-[#FFD95A] text-xs">
                       <span className="text-[#FFD95A] font-bold block uppercase text-[10px]">
-                        The Why:
+                        Diary Chronicle:
                       </span>
-                      <p className="text-[#FFF4D6] opacity-90">{activeEvent.whyLine}</p>
+                      <p className="text-[#FFF4D6]">{activeEvent.whyLine}</p>
                     </div>
 
-                    {activeEvent.recoveryPlan && (
-                      <div className="p-2 bg-[#3A2222] border border-[#EE6A5E] space-y-0.5 text-xs text-[#FFF4D6]">
-                        <span className="text-[#EE6A5E] block font-bold uppercase text-[10px]">
-                          Recovery Steps:
+                    {/* Recovery Action Plan (if in difficulty) */}
+                    {activeEvent.recoveryPlan && activeEvent.recoveryPlan.length > 0 && (
+                      <div className="p-2.5 bg-[#3A2222] border border-[#EE6A5E] text-xs text-[#FFF4D6] space-y-1">
+                        <span className="font-heading text-[#EE6A5E] block text-[10px] uppercase">
+                          Action Recovery Plan:
                         </span>
                         {activeEvent.recoveryPlan.map((step, idx) => (
                           <p key={idx}>▶ {step}</p>
@@ -156,7 +158,7 @@ export default function StoryPage() {
                   </div>
                 </div>
 
-                {/* Level Cushion & Active Goal (16px spacing, clean single column) */}
+                {/* Level Cushion & Active Target */}
                 <div className="space-y-3">
                   {/* Level Progress */}
                   <div className="space-y-1">
@@ -171,11 +173,11 @@ export default function StoryPage() {
                     </div>
                   </div>
 
-                  {/* Active Goal */}
+                  {/* Active Goal Quick View */}
                   <div className="space-y-1 pt-1">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-[#FFD95A] font-bold">
-                        Target: {activeGoal ? activeGoal.name : 'No Active Goal'}
+                        Current Savings Target: {activeGoal ? activeGoal.name : 'No Active Goal'}
                       </span>
                       {activeGoal && goalProgress && (
                         <span className="text-[#B4BAC4]">
@@ -189,7 +191,7 @@ export default function StoryPage() {
                       </div>
                     ) : (
                       <Link href="/vault" className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline block">
-                        Establish a goal in the Vault ➔
+                        Establish a savings goal in the Town Vault ➔
                       </Link>
                     )}
                   </div>
@@ -212,7 +214,20 @@ export default function StoryPage() {
                   )}
                 </div>
 
-                {/* Exactly One Primary Action Button per screen in solid gold */}
+                {/* Wisdom Cross-Link */}
+                <div className="p-3 bg-[#1B1B1F] rounded border border-[#B79A60] flex items-center justify-between flex-wrap gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📜</span>
+                    <span className="text-[#FFF4D6]">Looking for financial literature & scrolls?</span>
+                  </div>
+                  <Link
+                    href="/school"
+                    className="text-[#FFD95A] hover:underline font-heading text-[11px]"
+                  >
+                    Visit School of Wisdom ➔
+                  </Link>
+                </div>
+
                 <div className="pt-2">
                   <Link href="/" className="block">
                     <PixelButton variant="primary" size="md" fullWidth>
@@ -223,52 +238,79 @@ export default function StoryPage() {
               </div>
             )}
 
-            {/* Tab 2: Lessons (Last 3 items + See all link) */}
-            {activeTab === 'lessons' && (
+            {/* Tab 2: Wardrobe & Mirror (Living Room Dresser) */}
+            {activeTab === 'wardrobe' && (
               <div className="space-y-4 font-sans text-xs sm:text-sm">
-                <div className="flex justify-between items-center pb-1 border-b border-[#4B515A]/60">
-                  <span className="text-xs sm:text-sm font-sans font-bold text-[#FFD95A] uppercase tracking-wider">
-                    Recent Wisdom Scrolls
-                  </span>
-                  {allLessons.length > 3 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllLessons(!showAllLessons)}
-                      className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline cursor-pointer"
-                    >
-                      {showAllLessons ? 'Show latest 3' : `See all (${allLessons.length})`}
-                    </button>
-                  )}
-                </div>
+                <div className="flex items-center gap-5 p-3 bg-[#1B1B1F] rounded border border-[#4B515A]">
+                  <div className="p-3 bg-[#23252B] border border-[#B79A60] flex flex-col items-center justify-center shrink-0">
+                    <CharacterSprite
+                      hairColor={hair}
+                      outfitColor={outfit}
+                      mood="happy"
+                      size={64}
+                      animate={true}
+                    />
+                    <span className="text-[10px] text-[#FFD95A] font-heading mt-1">Mirror View</span>
+                  </div>
 
-                <div className="space-y-2.5">
-                  {displayedLessons.map((lesson) => (
-                    <div
-                      key={lesson.id}
-                      className={`p-3 border text-xs sm:text-sm space-y-1 ${
-                        lesson.unlocked
-                          ? 'border-[#79CE5E] bg-[#2E333B]'
-                          : 'border-[#4B515A] bg-[#25282E] opacity-70'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <strong className="text-[#FFD95A]">
-                          {lesson.title} ({lesson.book})
-                        </strong>
-                        <span className={lesson.unlocked ? 'text-[#79CE5E] font-bold text-[11px]' : 'text-[#B4BAC4] text-[11px]'}>
-                          {lesson.unlocked ? 'UNLOCKED' : 'LOCKED'}
-                        </span>
+                  <div className="space-y-3 flex-1 text-xs">
+                    {/* Hair Tone Picker */}
+                    <div>
+                      <span className="text-[#B4BAC4] font-bold block mb-1">Hair Tone</span>
+                      <div className="flex flex-wrap gap-2">
+                        {AVATAR_PRESETS.hairColors.map((c) => (
+                          <button
+                            key={c.value}
+                            type="button"
+                            onClick={() =>
+                              updateProfile({
+                                avatar: { hairColor: c.value, outfitColor: outfit },
+                              })
+                            }
+                            className={`w-6 h-6 border cursor-pointer transition-transform ${
+                              hair === c.value ? 'border-[#FFD95A] scale-110 shadow' : 'border-[#1B1B1F]'
+                            }`}
+                            style={{ backgroundColor: c.value }}
+                            title={c.label}
+                          />
+                        ))}
                       </div>
-                      <p className="text-[#FFF4D6] leading-relaxed">
-                        {lesson.cardText}
-                      </p>
                     </div>
-                  ))}
+
+                    {/* Outfit Tone Picker */}
+                    <div>
+                      <span className="text-[#B4BAC4] font-bold block mb-1">Outfit Tone</span>
+                      <div className="flex flex-wrap gap-2">
+                        {AVATAR_PRESETS.outfitColors.map((c) => (
+                          <button
+                            key={c.value}
+                            type="button"
+                            onClick={() =>
+                              updateProfile({
+                                avatar: { hairColor: hair, outfitColor: c.value },
+                              })
+                            }
+                            className={`w-6 h-6 border cursor-pointer transition-transform ${
+                              outfit === c.value ? 'border-[#FFD95A] scale-110 shadow' : 'border-[#1B1B1F]'
+                            }`}
+                            style={{ backgroundColor: c.value }}
+                            title={c.label}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="pt-2 text-center">
-                  <Link href="/school" className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline">
-                    Visit Schoolhouse for the complete curriculum ➔
+                <p className="text-xs text-[#B4BAC4] italic">
+                  Changes to your wardrobe reflect instantly on your character sprite walking across the island!
+                </p>
+
+                <div className="pt-2">
+                  <Link href="/" className="block">
+                    <PixelButton variant="primary" size="md" fullWidth>
+                      Done Dressing & Step Outside
+                    </PixelButton>
                   </Link>
                 </div>
               </div>

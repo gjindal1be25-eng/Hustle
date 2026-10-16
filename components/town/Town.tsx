@@ -1461,22 +1461,8 @@ export function Town() {
         })}
       </svg>
 
-      {/* Top Right HUD: Renown, Sheru Happiness, and Life Dilemma Alert */}
+      {/* Top Right HUD: Renown & Sheru Happiness */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 sm:gap-2 select-none">
-        {pendingDilemma && (
-          <button
-            type="button"
-            onClick={() => {
-              setActiveDilemma(pendingDilemma);
-              playButtonSound();
-            }}
-            className="px-2.5 py-1 bg-[#EE6A5E] hover:bg-[#D9534F] text-[#FFF4D6] border-2 border-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_3px_0_#000] cursor-pointer animate-pulse flex items-center gap-1 transition-transform active:translate-y-0.5"
-            title="A random financial life dilemma has occurred!"
-          >
-            <span>⚡</span>
-            <span className="hidden sm:inline">Dilemma!</span>
-          </button>
-        )}
         <div
           className="px-2 py-1 bg-[#1B1B1F]/90 border border-[#B79A60] text-[#FFD95A] font-heading text-[10px] sm:text-xs flex items-center gap-1.5 shadow"
           title="Town Renown (Earned from budgeting, bounties & quizzes)"

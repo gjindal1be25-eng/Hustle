@@ -2,18 +2,16 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
 import { PixelButton } from '@/components/ui/PixelButton';
-import { PixelInput } from '@/components/ui/PixelInput';
-import { PixelSelect } from '@/components/ui/PixelSelect';
 import { CharacterSprite } from '@/components/ui/CharacterSprite';
 import { RpgTextBox } from '@/components/ui/RpgTextBox';
 import { HudBar } from '@/components/ui/HudBar';
 import { AVATAR_PRESETS } from '@/lib/constants';
-import { CareerPath, Frequency, TransactionType } from '@/lib/types';
-import { getTodayISO } from '@/lib/rules';
+import { CareerPath } from '@/lib/types';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -23,7 +21,6 @@ export default function SettingsPage() {
     updateProfile,
     loadDemo,
     resetAll,
-    addRecurring,
     toggleRecurring,
     deleteRecurring,
   } = useGame();
@@ -32,33 +29,9 @@ export default function SettingsPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [showAllRecurring, setShowAllRecurring] = useState(false);
 
-  // Recurring form state
-  const [showAddRec, setShowAddRec] = useState(false);
-  const [recType, setRecType] = useState<TransactionType>('expense');
-  const [recFreq, setRecFreq] = useState<Frequency>('monthly');
-  const [recAmount, setRecAmount] = useState('');
-
   const profile = state.profile;
   const hair = profile?.avatar.hairColor || AVATAR_PRESETS.hairColors[0].value;
   const outfit = profile?.avatar.outfitColor || AVATAR_PRESETS.outfitColors[0].value;
-
-  const handleAddRecurringSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = parseFloat(recAmount);
-    if (isNaN(val) || val <= 0) return;
-
-    addRecurring({
-      type: recType,
-      frequency: recFreq,
-      categoryId: recType === 'income' ? 'cat_salary' : (state.categories[0]?.id || 'cat_food'),
-      tag: 'need',
-      amount: val,
-      startDate: getTodayISO(),
-    });
-
-    setRecAmount('');
-    setShowAddRec(false);
-  };
 
   const handleResetConfirm = () => {
     resetAll();
@@ -205,97 +178,93 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Recurring Rules Strip (last 3 items + See all link) */}
-                <div className="space-y-2 pt-2 border-t border-[#4B515A]/60">
-                  <div className="flex justify-between items-center pb-1">
-                    <span className="text-xs font-bold text-[#FFD95A] uppercase tracking-wider">
-                      Automated Recurring Rules
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddRec(!showAddRec)}
-                      className="text-xs text-[#D4A373] hover:text-[#FFD95A] underline cursor-pointer"
-                    >
-                      {showAddRec ? 'Cancel' : '+ Add rule'}
-                    </button>
+                {/* Automated Recurring Schedules Overview */}
+                <div className="space-y-3 pt-2 border-t border-[#4B515A]/60">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+                    <div>
+                      <span className="text-xs font-bold text-[#FFD95A] uppercase tracking-wider block">
+                        Active Automated Schedules ({state.recurring.length})
+                      </span>
+                      <span className="text-[11px] text-[#B4BAC4]">
+                        Salary runs via Work. Subscriptions & bills run via Market.
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href="/work"
+                        className="text-xs text-[#79CE5E] hover:underline font-bold px-2 py-0.5 border border-[#79CE5E]/40 bg-[#79CE5E]/10"
+                      >
+                        + Salary (Work) →
+                      </Link>
+                      <Link
+                        href="/market"
+                        className="text-xs text-[#FFD95A] hover:underline font-bold px-2 py-0.5 border border-[#FFD95A]/40 bg-[#FFD95A]/10"
+                      >
+                        + Bills (Market) →
+                      </Link>
+                    </div>
                   </div>
 
-                  {showAddRec && (
-                    <form onSubmit={handleAddRecurringSubmit} className="space-y-3 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <PixelSelect
-                          label="Type"
-                          value={recType}
-                          onChange={(e) => setRecType(e.target.value as TransactionType)}
-                          options={[
-                            { value: 'income', label: 'Income (+₹)' },
-                            { value: 'expense', label: 'Expense (-₹)' },
-                          ]}
-                        />
-                        <PixelSelect
-                          label="Frequency"
-                          value={recFreq}
-                          onChange={(e) => setRecFreq(e.target.value as Frequency)}
-                          options={[
-                            { value: 'daily', label: 'Daily' },
-                            { value: 'weekly', label: 'Weekly' },
-                            { value: 'monthly', label: 'Monthly' },
-                          ]}
-                        />
-                        <PixelInput
-                          label="Amount (₹)"
-                          type="number"
-                          min="1"
-                          placeholder="e.g. 5000"
-                          value={recAmount}
-                          onChange={(e) => setRecAmount(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="flex justify-end">
-                        <button
-                          type="submit"
-                          className="text-xs text-[#FFD95A] hover:underline font-bold cursor-pointer"
-                        >
-                          Save Rule
-                        </button>
-                      </div>
-                    </form>
-                  )}
-
                   {state.recurring.length === 0 ? (
-                    <p className="text-center italic py-2 text-xs text-[#B4BAC4]">
-                      No automated recurring entries active.
-                    </p>
+                    <div className="p-3 bg-[#1B1B1F] border border-[#4B515A] text-center space-y-1">
+                      <p className="italic text-xs text-[#B4BAC4]">
+                        No automated recurring rules active.
+                      </p>
+                      <p className="text-[11px] text-[#B4BAC4]">
+                        Set up a recurring monthly salary in <Link href="/work" className="text-[#79CE5E] underline">Work</Link> or add utility bills/subscriptions in <Link href="/market" className="text-[#FFD95A] underline">Market</Link>.
+                      </p>
+                    </div>
                   ) : (
-                    <div className="space-y-1">
-                      {displayedRecurring.map((r) => (
-                        <div
-                          key={r.id}
-                          className="p-2 bg-[#2E333B] border border-[#4B515A] flex items-center justify-between text-xs"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-[#FFD95A] font-bold uppercase">{r.frequency} {r.type}</span>
-                            <span className="font-mono text-[#FFF4D6]">₹{r.amount.toLocaleString('en-IN')}</span>
+                    <div className="space-y-1.5">
+                      {displayedRecurring.map((r) => {
+                        const isIncome = r.type === 'income';
+                        return (
+                          <div
+                            key={r.id}
+                            className="p-2.5 bg-[#2E333B] border border-[#4B515A] flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className={`text-[10px] font-bold px-1.5 py-0.5 border uppercase ${
+                                  isIncome
+                                    ? 'text-[#79CE5E] border-[#79CE5E]/50 bg-[#79CE5E]/10'
+                                    : 'text-[#EE6A5E] border-[#EE6A5E]/50 bg-[#EE6A5E]/10'
+                                }`}
+                              >
+                                {r.frequency} {r.type}
+                              </span>
+                              <span className="font-mono text-[#FFF4D6] font-bold">
+                                ₹{r.amount.toLocaleString('en-IN')}
+                              </span>
+                              <span className="text-[11px] text-[#B4BAC4]">
+                                {isIncome ? '(Managed at Work)' : '(Managed at Market)'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toggleRecurring(r.id)}
+                                className={`text-[11px] px-2 py-0.5 border cursor-pointer font-bold ${
+                                  r.active
+                                    ? 'text-[#79CE5E] border-[#79CE5E]/50 bg-[#79CE5E]/10'
+                                    : 'text-[#EE6A5E] border-[#EE6A5E]/50 bg-[#EE6A5E]/10'
+                                }`}
+                              >
+                                {r.active ? 'Active' : 'Paused'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteRecurring(r.id)}
+                                className="text-xs text-[#EE6A5E] hover:underline cursor-pointer px-1"
+                                title="Delete schedule"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => toggleRecurring(r.id)}
-                              className={`text-xs underline cursor-pointer ${r.active ? 'text-[#79CE5E]' : 'text-[#EE6A5E]'}`}
-                            >
-                              {r.active ? 'Active' : 'Paused'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => deleteRecurring(r.id)}
-                              className="text-xs text-[#EE6A5E] hover:underline cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {state.recurring.length > 3 && (
                         <div className="pt-1 text-center">
