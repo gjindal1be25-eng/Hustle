@@ -2,7 +2,6 @@
 // Just-in-Time Nudges, Opportunity Cost Time Machine, Behavioral Biases, Indian Benchmarks, and Socratic Dialogues
 
 import { Transaction } from './types';
-import { LESSONS } from './constants';
 
 export interface ContextualNudge {
   id: string;

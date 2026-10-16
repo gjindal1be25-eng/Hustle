@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { calculateOpportunityCostEngine, formatInr } from '@/lib/teaching';
 import { StonePanel } from '@/components/ui/StonePanel';
-import { PixelButton } from '@/components/ui/PixelButton';
 import { playButtonSound } from '@/lib/sound';
 
 export function OpportunityCostTimeMachine() {
@@ -38,33 +37,39 @@ export function OpportunityCostTimeMachine() {
     1000
   );
 
-  const getX = (y: number) => padding.left + (y / years) * innerWidth;
-  const getY = (val: number) => padding.top + innerHeight - (val / maxVal) * innerHeight;
+  const getX = useCallback(
+    (y: number) => padding.left + (y / years) * innerWidth,
+    [padding.left, years, innerWidth]
+  );
+  const getY = useCallback(
+    (val: number) => padding.top + innerHeight - (val / maxVal) * innerHeight,
+    [padding.top, innerHeight, maxVal]
+  );
 
   // Generate SVG path strings
   const niftyPath = useMemo(() => {
     return result.chartPoints
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(p.year)} ${getY(p.niftyValue)}`)
       .join(' ');
-  }, [result.chartPoints, maxVal, years]);
+  }, [result.chartPoints, getX, getY]);
 
   const fdPath = useMemo(() => {
     return result.chartPoints
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(p.year)} ${getY(p.fdValue)}`)
       .join(' ');
-  }, [result.chartPoints, maxVal, years]);
+  }, [result.chartPoints, getX, getY]);
 
   const cashPath = useMemo(() => {
     return result.chartPoints
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(p.year)} ${getY(p.cashPurchasingPower)}`)
       .join(' ');
-  }, [result.chartPoints, maxVal, years]);
+  }, [result.chartPoints, getX, getY]);
 
   const principalPath = useMemo(() => {
     return result.chartPoints
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(p.year)} ${getY(p.principal)}`)
       .join(' ');
-  }, [result.chartPoints, maxVal, years]);
+  }, [result.chartPoints, getX, getY]);
 
   // Area fill for Nifty
   const niftyArea = `${niftyPath} L ${getX(years)} ${getY(0)} L ${getX(0)} ${getY(0)} Z`;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { INDIAN_BENCHMARKS, formatInr } from '@/lib/teaching';
+import { INDIAN_BENCHMARKS } from '@/lib/teaching';
 import { StonePanel } from '@/components/ui/StonePanel';
 
 export function IndianBenchmarksView() {

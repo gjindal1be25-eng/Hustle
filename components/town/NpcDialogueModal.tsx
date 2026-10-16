@@ -8,7 +8,7 @@ import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
 import { PixelButton } from '@/components/ui/PixelButton';
 import { useGame } from '@/context/GameContext';
-import { playCoinSound, playFanfareSound, playWarningSound } from '@/lib/sound';
+import { playFanfareSound, playWarningSound } from '@/lib/sound';
 
 interface NpcDialogueModalProps {
   npc: NpcDef | null;
@@ -25,7 +25,6 @@ export function NpcDialogueModal({
 }: NpcDialogueModalProps) {
   const { addRenown, dismissLesson } = useGame();
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | null>(null);
-  const [answeredMap, setAnsweredMap] = useState<Record<string, 'A' | 'B'>>({});
 
   if (!npc) return null;
 
@@ -35,7 +34,6 @@ export function NpcDialogueModal({
   const handleSelectAnswer = (choice: 'A' | 'B') => {
     if (selectedAnswer !== null || !activeDialogue) return;
     setSelectedAnswer(choice);
-    setAnsweredMap((prev) => ({ ...prev, [npc.id]: choice }));
 
     const option = choice === 'A' ? activeDialogue.optionA : activeDialogue.optionB;
     if (option.isCorrect) {

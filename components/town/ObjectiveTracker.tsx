@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
-import { QUEST_CHAPTERS, QuestStep } from '@/lib/quests';
+import { QUEST_CHAPTERS } from '@/lib/quests';
 import { WoodFrame } from '@/components/ui/WoodFrame';
 import { StonePanel } from '@/components/ui/StonePanel';
 import { PixelButton } from '@/components/ui/PixelButton';

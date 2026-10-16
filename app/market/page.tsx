@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useGame } from '@/context/GameContext';
 import { WoodFrame } from '@/components/ui/WoodFrame';
@@ -57,7 +57,12 @@ export default function MarketPage() {
   const [blitzFeedback, setBlitzFeedback] = useState<{ text: string; correct: boolean } | null>(null);
   const [blitzFinished, setBlitzFinished] = useState(false);
   const [blitzShuffledItems, setBlitzShuffledItems] = useState<NeedsWantsItem[]>(NEEDS_WANTS_ITEMS);
-  const [blitzRenownEarned, setBlitzRenownEarned] = useState(0);
+  const rewardedBlitzRef = useRef(false);
+
+  const blitzRenownEarned =
+    blitzFinished && blitzScore > 0
+      ? Math.max(10, Math.round(blitzScore / 4) + blitzMaxStreak * 2)
+      : 0;
 
   // Form states
   const [amount, setAmount] = useState<string>('');
@@ -175,10 +180,13 @@ export default function MarketPage() {
 
   // When blitz finishes, calculate and award renown once
   useEffect(() => {
-    if (blitzFinished && blitzScore > 0) {
+    if (blitzFinished && blitzScore > 0 && !rewardedBlitzRef.current) {
+      rewardedBlitzRef.current = true;
       const reward = Math.max(10, Math.round(blitzScore / 4) + blitzMaxStreak * 2);
-      setBlitzRenownEarned(reward);
       addRenown(reward, 'Needs vs Wants Blitz');
+    }
+    if (!blitzFinished) {
+      rewardedBlitzRef.current = false;
     }
   }, [blitzFinished, blitzScore, blitzMaxStreak, addRenown]);
 
@@ -190,7 +198,6 @@ export default function MarketPage() {
     setBlitzStreak(0);
     setBlitzMaxStreak(0);
     setBlitzFeedback(null);
-    setBlitzRenownEarned(0);
     setBlitzTimeLeft(25);
     setBlitzFinished(false);
     setBlitzPlaying(true);

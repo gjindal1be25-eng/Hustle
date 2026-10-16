@@ -16,7 +16,7 @@ import {
   findAStarPath,
 } from '@/lib/townGrid';
 import { getTodayISO } from '@/lib/rules';
-import { TOWN_NPCS, FINANCIAL_DILEMMAS, NpcDef, Dilemma } from '@/lib/gameplay';
+import { TOWN_NPCS, NpcDef, Dilemma } from '@/lib/gameplay';
 import { SheruPet } from './SheruPet';
 import { TownNpcSprite } from './TownNpcSprite';
 import {
@@ -717,9 +717,6 @@ export function Town() {
     state,
     level,
     activeEvent,
-    balance,
-    netSavings,
-    avgMonthlyIncome,
     petDog,
     completeQuest,
     resolveDilemma,
@@ -745,7 +742,7 @@ export function Town() {
   const [selectedNpc, setSelectedNpc] = useState<NpcDef | null>(null);
   const [activeDilemma, setActiveDilemma] = useState<Dilemma | null>(null);
   const [pettedRecently, setPettedRecently] = useState(false);
-  const [sheruBannerDismissed, setSheruBannerDismissed] = useState(false);
+  const [dismissedSheruPos, setDismissedSheruPos] = useState<Point2D | null>(null);
   const [showNoticeboard, setShowNoticeboard] = useState(false);
 
   const charPosRef = useRef<Point2D>({ x: 5.3, y: 6.0 });
@@ -812,27 +809,20 @@ export function Town() {
   const distToSheru = Math.hypot(charPos.x - petPos.x, charPos.y - petPos.y);
   const isNearSheru = distToSheru <= 1.15;
 
-  // Reset banner dismissal only when player moves away
-  useEffect(() => {
-    if (distToSheru > 1.8) {
-      setSheruBannerDismissed(false);
-    }
-  }, [distToSheru]);
+  // Derive banner dismissal without setState inside an effect
+  const sheruBannerDismissed = Boolean(
+    dismissedSheruPos &&
+      Math.hypot(charPos.x - dismissedSheruPos.x, charPos.y - dismissedSheruPos.y) < 1.0
+  );
 
   const handlePetSheru = useCallback(() => {
     petDog();
     setPettedRecently(true);
     setTimeout(() => {
       setPettedRecently(false);
-      setSheruBannerDismissed(true);
+      setDismissedSheruPos({ ...charPosRef.current });
     }, 2200);
   }, [petDog]);
-
-  // Unresolved dilemma trigger check
-  const pendingDilemma = useMemo(() => {
-    const resolved = state.resolvedDilemmas || [];
-    return FINANCIAL_DILEMMAS.find((d) => !resolved.includes(d.id)) || null;
-  }, [state.resolvedDilemmas]);
 
   // Town NPC Sprites
   const npcNodes = useMemo(() => {
@@ -1069,7 +1059,7 @@ export function Town() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [router, nearestNpc, isNearSheru, petDog]);
+  }, [router, nearestNpc, isNearSheru, handlePetSheru]);
 
   // Continuous game loop with inertia, corner sliding, doorway funnel, SFX, and dust
   useEffect(() => {
@@ -1585,7 +1575,7 @@ export function Town() {
             </button>
             <button
               type="button"
-              onClick={() => setSheruBannerDismissed(true)}
+              onClick={() => setDismissedSheruPos({ x: charPos.x, y: charPos.y })}
               className="px-2 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#4B515A] hover:border-[#FFD95A] text-[#B4BAC4] hover:text-[#FFF4D6] text-xs cursor-pointer font-bold"
               title="Dismiss"
               aria-label="Dismiss banner"
