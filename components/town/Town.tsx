@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { TownCharacter } from './TownCharacter';
@@ -739,7 +739,8 @@ export function Town() {
   // RPG Pillar state: dialogue modals & dilemmas
   const [selectedNpc, setSelectedNpc] = useState<NpcDef | null>(null);
   const [activeDilemma, setActiveDilemma] = useState<Dilemma | null>(null);
-  const [, setSheruPettedAnim] = useState(false);
+  const [pettedRecently, setPettedRecently] = useState(false);
+  const [sheruBannerDismissed, setSheruBannerDismissed] = useState(false);
 
   const charPosRef = useRef<Point2D>({ x: 5.3, y: 6.0 });
   const walkPathRef = useRef<Point2D[]>([]);
@@ -797,14 +798,29 @@ export function Town() {
   const today = getTodayISO();
   const hasPettedToday = state.lastPettedDate === today;
 
-  // Pet Sheru position (open cobblestone plaza west of the well)
+  // Pet Sheru position (Cobblestone plaza North-East sunny corner, well clear of Uncle Sharma and town spawn)
   const petPos = useMemo(() => {
-    return { x: 4.5, y: 5.0 };
+    return { x: 6.2, y: 4.2 };
   }, []);
 
-  const isNearSheru = useMemo(() => {
-    return Math.hypot(charPos.x - petPos.x, charPos.y - petPos.y) < 1.4;
-  }, [charPos.x, charPos.y, petPos.x, petPos.y]);
+  const distToSheru = Math.hypot(charPos.x - petPos.x, charPos.y - petPos.y);
+  const isNearSheru = distToSheru <= 1.15;
+
+  // Reset banner dismissal only when player moves away
+  useEffect(() => {
+    if (distToSheru > 1.8) {
+      setSheruBannerDismissed(false);
+    }
+  }, [distToSheru]);
+
+  const handlePetSheru = useCallback(() => {
+    petDog();
+    setPettedRecently(true);
+    setTimeout(() => {
+      setPettedRecently(false);
+      setSheruBannerDismissed(true);
+    }, 2200);
+  }, [petDog]);
 
   // Unresolved dilemma trigger check
   const pendingDilemma = useMemo(() => {
@@ -844,16 +860,12 @@ export function Town() {
           x={petPos.x}
           y={petPos.y}
           happiness={state.petHappiness ?? 80}
-          onPet={() => {
-            petDog();
-            setSheruPettedAnim(true);
-            setTimeout(() => setSheruPettedAnim(false), 2000);
-          }}
+          onPet={handlePetSheru}
           idleTick={idleTick}
         />
       ),
     };
-  }, [petPos.x, petPos.y, state.petHappiness, petDog, idleTick]);
+  }, [petPos.x, petPos.y, state.petHappiness, handlePetSheru, idleTick]);
 
   // Character figure matching customized avatar appearance, animations, juice, and direction
   const charSpriteNode = useMemo(
@@ -1019,9 +1031,7 @@ export function Town() {
           return;
         }
         if (isNearSheru) {
-          petDog();
-          setSheruPettedAnim(true);
-          setTimeout(() => setSheruPettedAnim(false), 2000);
+          handlePetSheru();
           return;
         }
       } else if (keyLower === 'e') {
@@ -1030,9 +1040,7 @@ export function Town() {
           setSelectedNpc(nearestNpc);
           playButtonSound();
         } else if (isNearSheru) {
-          petDog();
-          setSheruPettedAnim(true);
-          setTimeout(() => setSheruPettedAnim(false), 2000);
+          handlePetSheru();
         }
       }
     };
@@ -1512,20 +1520,35 @@ export function Town() {
           <span>Talk to {nearestNpc.name} (Press E or SPACE)</span>
           <span>➔</span>
         </button>
-      ) : isNearSheru && !isEntering ? (
-        <button
-          type="button"
-          onClick={() => {
-            petDog();
-            setSheruPettedAnim(true);
-            setTimeout(() => setSheruPettedAnim(false), 2000);
-          }}
-          className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2 animate-bounce"
-        >
-          <span>🐾</span>
-          <span>Pet Sheru (+10% Happiness! Press SPACE or E)</span>
-          <span>❤️</span>
-        </button>
+      ) : isNearSheru && !isEntering && !sheruBannerDismissed ? (
+        pettedRecently ? (
+          <div className="absolute top-3 left-3 sm:left-4 z-20 px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#79CE5E] text-[#FFF4D6] font-heading text-[10px] sm:text-xs shadow-[0_4px_0_#000] flex items-center gap-2 animate-fadeIn">
+            <span>🐾</span>
+            <span className="text-[#79CE5E]">Sheru wags his tail happily! (+10% Happiness)</span>
+            <span>❤️</span>
+          </div>
+        ) : !hasPettedToday ? (
+          <div className="absolute top-3 left-3 sm:left-4 z-20 flex items-center gap-1 shadow-[0_4px_0_#000] animate-bounce">
+            <button
+              type="button"
+              onClick={handlePetSheru}
+              className="px-3 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#FFD95A] text-[#FFD95A] font-heading text-[10px] sm:text-xs cursor-pointer hover:bg-[#FFD95A] hover:text-[#1B1B1F] transition-all flex items-center gap-2"
+            >
+              <span>🐾</span>
+              <span>Pet Sheru (+10% Happiness! Press SPACE or E)</span>
+              <span>❤️</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSheruBannerDismissed(true)}
+              className="px-2 py-1.5 bg-[#1B1B1F]/95 border-2 border-[#4B515A] hover:border-[#FFD95A] text-[#B4BAC4] hover:text-[#FFF4D6] text-xs cursor-pointer font-bold"
+              title="Dismiss"
+              aria-label="Dismiss banner"
+            >
+              ✕
+            </button>
+          </div>
+        ) : null
       ) : null}
 
       {/* On-Screen Mobile / Touch Virtual Controls */}
@@ -1591,9 +1614,7 @@ export function Town() {
                     return;
                   }
                   if (isNearSheru) {
-                    petDog();
-                    setSheruPettedAnim(true);
-                    setTimeout(() => setSheruPettedAnim(false), 2000);
+                    handlePetSheru();
                     return;
                   }
                 }}
