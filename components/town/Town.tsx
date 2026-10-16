@@ -1406,13 +1406,22 @@ export function Town() {
                 fill="transparent"
               />
 
-              {/* Active Quest Beacon floating above roof apex */}
+              {/* Active Quest Beacon floating gently above roof apex */}
               {viewMode !== 'finance' && questProgress?.activeBuildingId === b.id && (
                 <g
-                  transform={`translate(${rx}, ${showLabel && liveBadge ? ry - 54 : ry - 32})`}
+                  transform={`translate(${rx}, ${(showLabel && liveBadge ? ry - 48 : ry - 26) + Math.sin(idleTick * 3.5) * 2.5})`}
                   className="pointer-events-none select-none"
                 >
-                  <g className="animate-bounce">
+                  <g>
+                    {/* Soft pulsing halo */}
+                    <ellipse
+                      cx="0"
+                      cy="0"
+                      rx="48"
+                      ry="13"
+                      fill="#FFD95A"
+                      opacity={0.2 + Math.sin(idleTick * 3) * 0.08}
+                    />
                     <rect
                       x="-44"
                       y="-11"
